@@ -158,7 +158,9 @@ h1, h2, h3, .display {
   font-weight: 650;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  white-space: nowrap;
+  white-space: normal;
+  max-width: 100%;
+  text-align: center;
   cursor: pointer;
   transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
   transform: translate3d(var(--mx, 0px), var(--my, 0px), 0);
@@ -181,6 +183,8 @@ h1, h2, h3, .display {
   color: var(--ink);
   letter-spacing: 0.08em;
   border: 0;
+  text-align: left;
+  justify-content: flex-start;
 }
 
 .btn-text span { border-bottom: 1px solid var(--lime); padding-bottom: 0.1rem; }
