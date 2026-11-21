@@ -12,7 +12,7 @@ export function SkillsView() {
   return (
     <div className="site pb-8 pt-12">
       <p className="kicker">Skills</p>
-      <h1 className="mt-4 max-w-3xl text-5xl tracking-[-0.045em] md:text-7xl">A stack with a reason next to it.</h1>
+      <h1 className="mt-4 max-w-3xl text-[clamp(2.15rem,8vw,4.5rem)] tracking-[-0.045em]">A stack with a reason next to it.</h1>
       <p className="mt-6 max-w-2xl text-lg text-[var(--muted)]">
         No percentage bars. Select a technology to see where it shows up — a repository, a role, or only the resume.
       </p>

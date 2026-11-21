@@ -3,7 +3,7 @@ import { navItems, profile } from "@/data/profile";
 
 export function Footer() {
   return (
-    <footer className="mt-24 border-t border-[var(--line)]">
+    <footer className="mt-16 border-t border-[var(--line)] md:mt-24">
       <div className="site grid gap-10 py-12 md:grid-cols-12">
         <div className="md:col-span-5">
           <p className="text-4xl tracking-[-0.06em]">{profile.monogram}</p>

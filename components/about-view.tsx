@@ -17,7 +17,7 @@ export function AboutView() {
   return (
     <article className="site pb-8 pt-12">
       <p className="kicker">About</p>
-      <h1 className="display mt-4 max-w-4xl text-[clamp(3rem,7vw,5.8rem)]">A developer who wants the system to be explainable.</h1>
+      <h1 className="display mt-4 max-w-4xl text-[clamp(2.2rem,9vw,5.8rem)]">A developer who wants the system to be explainable.</h1>
       <p className="mt-8 max-w-2xl text-xl leading-relaxed text-[var(--muted)]">
         I am {profile.name}, based in {profile.location}. I study {profile.education.degree} at {profile.education.school}. The work I take seriously sits where a backend, a model, or a dataset has to become something a person can run.
       </p>

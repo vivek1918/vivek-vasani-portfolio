@@ -280,7 +280,7 @@ export function KnowledgeGraph({ focusId }: { focusId?: string }) {
   };
 
   return (
-    <section className="site mt-28" id="graph">
+    <section className="site mt-16 md:mt-28" id="graph">
       <p className="kicker">03 — Engineering universe</p>
       <h2 className="display mt-4 max-w-4xl text-[clamp(2.4rem,5vw,4.4rem)]">The engineering universe — how everything connects.</h2>
       <p className="mt-4 max-w-2xl text-lg text-[var(--muted)]">
@@ -298,7 +298,7 @@ export function KnowledgeGraph({ focusId }: { focusId?: string }) {
           <label className="sr-only" htmlFor="graph-search">Search nodes</label>
           <input
             id="graph-search"
-            className="field !w-56 !py-2"
+            className="field w-full !py-2 sm:w-56"
             value={query}
             placeholder="Search nodes"
             onChange={(event) => setQuery(event.target.value)}

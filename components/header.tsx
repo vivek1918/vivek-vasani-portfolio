@@ -30,10 +30,16 @@ export function Header() {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") setOpen(false);
     };
+    const main = document.getElementById("content");
+    const footer = document.querySelector("footer");
     document.body.style.overflow = "hidden";
+    main?.setAttribute("inert", "");
+    footer?.setAttribute("inert", "");
     window.addEventListener("keydown", onKey);
     return () => {
       document.body.style.overflow = "";
+      main?.removeAttribute("inert");
+      footer?.removeAttribute("inert");
       window.removeEventListener("keydown", onKey);
     };
   }, [open]);
@@ -41,8 +47,8 @@ export function Header() {
   const active = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
 
   return (
-    <header className={`nav-shell ${scrolled || open ? "scrolled" : ""}`}>
-      <div className="site relative z-10 flex h-[4.25rem] items-center justify-between gap-4">
+    <header className={`nav-shell ${open ? "menu-open" : scrolled ? "scrolled" : ""}`}>
+      <div className="site relative z-20 flex h-[4.25rem] items-center justify-between gap-3">
         <Link href="/" className="text-[1.35rem] font-medium tracking-[-0.06em]" aria-label="Vivek Vasani, home">
           {profile.monogram}
         </Link>
@@ -78,23 +84,23 @@ export function Header() {
         </div>
       </div>
       {open ? (
-        <div id="mobile-nav" className="fixed inset-0 z-0 flex flex-col bg-[var(--bg)] pt-24 lg:hidden">
-          <nav className="site flex flex-1 flex-col" aria-label="Mobile">
+        <div id="mobile-nav" className="mobile-nav lg:hidden">
+          <nav className="site flex min-h-full flex-col pb-8" aria-label="Mobile">
             {navItems.map((item, index) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-baseline justify-between border-b border-[var(--line)] py-4 text-4xl tracking-[-0.045em] ${active(item.href) ? "text-[var(--ink)]" : "text-[var(--muted)]"}`}
+                className={`mobile-link ${active(item.href) ? "text-[var(--ink)]" : "text-[var(--muted)]"}`}
               >
                 {item.label}
                 <span className="font-mono text-xs tracking-[0.16em] text-[var(--accent-text)]">0{index + 1}</span>
               </Link>
             ))}
-            <div className="mt-8 flex flex-wrap gap-6 text-sm uppercase tracking-[0.14em] text-[var(--muted)]">
-              <button type="button" onClick={() => setPaletteOpen(true)}>
+            <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-sm uppercase tracking-[0.14em] text-[var(--muted)]">
+              <button type="button" className="min-h-11" onClick={() => setPaletteOpen(true)}>
                 Command palette
               </button>
-              <button type="button" onClick={() => setTerminalOpen(true)}>
+              <button type="button" className="min-h-11" onClick={() => setTerminalOpen(true)}>
                 Terminal
               </button>
             </div>

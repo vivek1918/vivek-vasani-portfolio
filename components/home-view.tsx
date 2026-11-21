@@ -22,7 +22,7 @@ export function HomeView({ github, focusNode }: { github: GithubPayload; focusNo
       <Featured />
       <ExperiencePreview />
       <SkillsPreview />
-      <section className="site mt-28" id="github">
+      <section className="site mt-16 md:mt-28" id="github">
         <SectionLabel index="07" text="GitHub" />
         <div className="mt-6 flex flex-col justify-between gap-4 md:flex-row md:items-end">
           <h2 className="max-w-xl text-4xl tracking-[-0.04em] md:text-6xl">Public work, read from GitHub.</h2>
@@ -57,7 +57,7 @@ function Hero() {
             {profile.availability.label}
           </p>
         </div>
-        <h1 className="display mt-6 text-[clamp(3.3rem,8vw,6.6rem)]">
+        <h1 className="display mt-6 text-[clamp(2.35rem,11vw,6.6rem)]">
           {profile.heroLines.map((line, index) => (
             <motion.span
               key={line}
@@ -90,7 +90,7 @@ function Hero() {
 
 function AboutPreview() {
   return (
-    <section className="site mt-24 grid gap-10 border-t border-[var(--line)] pt-12 lg:grid-cols-12">
+    <section className="site mt-16 grid gap-10 border-t border-[var(--line)] pt-10 md:mt-24 lg:grid-cols-12">
       <div className="lg:col-span-6">
         <SectionLabel index="02" text="About" />
         <h2 className="display mt-4 text-4xl md:text-6xl">More than just writing code.</h2>
@@ -124,7 +124,7 @@ function AboutPreview() {
 function Featured() {
   const featured = projects.filter((project) => project.featured);
   return (
-    <section className="site mt-28" id="projects">
+    <section className="site mt-16 md:mt-28" id="projects">
       <SectionLabel index="04" text="Selected work" />
       <div className="mt-4 flex items-end justify-between gap-6">
         <h2 className="max-w-2xl text-4xl tracking-[-0.045em] md:text-6xl">Five projects with the repository behind them.</h2>
@@ -241,7 +241,7 @@ function SkillsPreview() {
   const [group, setGroup] = useState<(typeof skillGroups)[number]>("Programming");
   const items = skills.filter((skill) => skill.group === group);
   return (
-    <section className="site mt-24 border-t border-[var(--line)] pt-12">
+    <section className="site mt-16 border-t border-[var(--line)] pt-10 md:mt-24">
       <SectionLabel index="06" text="Stack" />
       <h2 className="mt-4 max-w-xl text-4xl tracking-[-0.04em] md:text-5xl">Technologies tied to a project or a role.</h2>
       <div className="mt-8 flex flex-wrap gap-2">
@@ -268,7 +268,7 @@ function SkillsPreview() {
 
 function ContactPreview() {
   return (
-    <section className="site mt-28 border-t border-[var(--line)] pt-14">
+    <section className="site mt-16 border-t border-[var(--line)] pt-10 md:mt-28 md:pt-14">
       <p className="kicker">08 — Contact</p>
       <h2 className="display mt-4 max-w-4xl text-[clamp(2.8rem,7vw,5.6rem)]">Let’s create something that matters.</h2>
       <p className="mt-6 max-w-2xl text-lg leading-relaxed text-[var(--muted)]">

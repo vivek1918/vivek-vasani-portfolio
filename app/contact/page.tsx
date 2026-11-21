@@ -14,7 +14,7 @@ export default function ContactPage() {
     <div className="site grid gap-10 pb-8 pt-12 lg:grid-cols-12">
       <div className="lg:col-span-6">
         <p className="kicker">Contact</p>
-        <h1 className="display mt-4 text-[clamp(3rem,6.4vw,5.4rem)]">Let’s create something that matters.</h1>
+        <h1 className="display mt-4 text-[clamp(2.2rem,9vw,5.4rem)]">Let’s create something that matters.</h1>
         <p className="mt-6 max-w-md text-lg leading-relaxed text-[var(--muted)]">
           Have an interesting idea, a challenging engineering problem, or an opportunity to collaborate? I&apos;d love to hear about it.
         </p>

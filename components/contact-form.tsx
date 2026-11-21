@@ -1,39 +1,50 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { profile } from "@/data/profile";
 
 type Status = "idle" | "sending" | "sent" | "error";
+type FieldKey = "name" | "email" | "subject" | "message";
 
 const categories = ["", "AI / ML", "Backend", "Data", "Collaboration", "Other"];
 
+function fieldProblems(fields: { name: string; email: string; subject: string; message: string; category: string }) {
+  const problems: Partial<Record<FieldKey, string>> = {};
+  if (fields.name.trim().length < 2 || fields.name.trim().length > 80) problems.name = "Add your name.";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fields.email.trim()) || fields.email.trim().length > 120) problems.email = "Add a valid email.";
+  if (fields.subject.trim().length < 3 || fields.subject.trim().length > 140) problems.subject = "Add a subject.";
+  if (fields.message.trim().length < 10 || fields.message.trim().length > 5000) problems.message = "Write a message of at least a few words.";
+  return problems;
+}
+
 export function ContactForm() {
+  const sending = useRef(false);
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
+  const [problems, setProblems] = useState<Partial<Record<FieldKey, string>>>({});
   const [copied, setCopied] = useState(false);
   const [fields, setFields] = useState({ name: "", email: "", subject: "", message: "", category: "", company: "" });
 
   const update = (key: keyof typeof fields) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setFields((current) => ({ ...current, [key]: event.target.value }));
-  };
-
-  const validate = () => {
-    if (fields.name.trim().length < 2 || fields.name.trim().length > 80) return "Add your name.";
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fields.email.trim()) || fields.email.trim().length > 120) return "Add a valid email.";
-    if (fields.subject.trim().length < 3 || fields.subject.trim().length > 140) return "Add a subject.";
-    if (fields.message.trim().length < 10 || fields.message.trim().length > 5000) return "Write a message of at least a few words.";
-    if (!categories.includes(fields.category)) return "Choose a known category.";
-    return "";
+    const value = event.target.value;
+    setFields((current) => ({ ...current, [key]: value }));
+    if (key === "name" || key === "email" || key === "subject" || key === "message") {
+      setProblems((current) => ({ ...current, [key]: undefined }));
+    }
   };
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
-    const problem = validate();
-    if (problem) {
+    if (sending.current) return;
+    const nextProblems = fieldProblems(fields);
+    setProblems(nextProblems);
+    const problem = nextProblems.name || nextProblems.email || nextProblems.subject || nextProblems.message || "";
+    if (problem || !categories.includes(fields.category)) {
       setStatus("error");
-      setError(problem);
+      setError(problem || "Choose a known category.");
       return;
     }
+    sending.current = true;
     setStatus("sending");
     setError("");
     try {
@@ -45,6 +56,7 @@ export function ContactForm() {
       const data = (await response.json()) as { ok?: boolean; error?: string };
       if (response.ok && data.ok) {
         setStatus("sent");
+        setProblems({});
         setFields({ name: "", email: "", subject: "", message: "", category: "", company: "" });
         return;
       }
@@ -70,6 +82,7 @@ export function ContactForm() {
       const accepted = directJson?.success === true || directJson?.success === "true";
       if (direct.ok && accepted) {
         setStatus("sent");
+        setProblems({});
         setFields({ name: "", email: "", subject: "", message: "", category: "", company: "" });
         return;
       }
@@ -83,6 +96,8 @@ export function ContactForm() {
     } catch {
       setStatus("error");
       setError("The message was not sent. Email works directly.");
+    } finally {
+      sending.current = false;
     }
   };
 
@@ -99,18 +114,21 @@ export function ContactForm() {
   const mailto = `mailto:${profile.email}?subject=${encodeURIComponent(fields.subject || "Hello")}&body=${encodeURIComponent(fields.message)}`;
 
   return (
-    <form onSubmit={submit} className="mt-8 max-w-xl" noValidate>
+    <form onSubmit={submit} className="mt-8 w-full max-w-xl" noValidate aria-busy={status === "sending"}>
       <label className="mt-4 block">
         <span className="kicker">Name</span>
-        <input className="field" name="name" value={fields.name} onChange={update("name")} autoComplete="name" maxLength={80} required />
+        <input className="field" name="name" value={fields.name} onChange={update("name")} autoComplete="name" maxLength={80} required aria-invalid={problems.name ? true : undefined} aria-describedby={problems.name ? "name-error" : undefined} />
+        {problems.name ? <span id="name-error" className="mt-1 block text-sm text-[var(--danger)]">{problems.name}</span> : null}
       </label>
       <label className="mt-4 block">
         <span className="kicker">Email</span>
-        <input className="field" type="email" name="email" value={fields.email} onChange={update("email")} autoComplete="email" maxLength={120} required />
+        <input className="field" type="email" name="email" inputMode="email" value={fields.email} onChange={update("email")} autoComplete="email" maxLength={120} required aria-invalid={problems.email ? true : undefined} aria-describedby={problems.email ? "email-error" : undefined} />
+        {problems.email ? <span id="email-error" className="mt-1 block text-sm text-[var(--danger)]">{problems.email}</span> : null}
       </label>
       <label className="mt-4 block">
         <span className="kicker">Subject</span>
-        <input className="field" name="subject" value={fields.subject} onChange={update("subject")} maxLength={140} required />
+        <input className="field" name="subject" value={fields.subject} onChange={update("subject")} maxLength={140} required aria-invalid={problems.subject ? true : undefined} aria-describedby={problems.subject ? "subject-error" : undefined} />
+        {problems.subject ? <span id="subject-error" className="mt-1 block text-sm text-[var(--danger)]">{problems.subject}</span> : null}
       </label>
       <label className="mt-4 block">
         <span className="kicker">Project category</span>
@@ -125,14 +143,15 @@ export function ContactForm() {
       </label>
       <label className="mt-4 block">
         <span className="kicker">Message</span>
-        <textarea className="field" name="message" value={fields.message} onChange={update("message")} maxLength={5000} required />
+        <textarea className="field" name="message" value={fields.message} onChange={update("message")} maxLength={5000} required aria-invalid={problems.message ? true : undefined} aria-describedby={problems.message ? "message-error" : undefined} />
+        {problems.message ? <span id="message-error" className="mt-1 block text-sm text-[var(--danger)]">{problems.message}</span> : null}
         <span className="mt-1 block font-mono text-[11px] text-[var(--faint)]">{fields.message.length} / 5000</span>
       </label>
-      <label className="absolute -left-[9999px]" aria-hidden="true">
+      <label className="hp" aria-hidden="true">
         Company
         <input tabIndex={-1} autoComplete="off" aria-hidden="true" value={fields.company} onChange={update("company")} />
       </label>
-      <div className="mt-6 flex flex-wrap gap-3">
+      <div className="contact-actions mt-6">
         <button className="btn" type="submit" disabled={status === "sending"}>
           {status === "sending" ? "Sending" : "Send message"}
         </button>

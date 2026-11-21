@@ -32,7 +32,8 @@ export function ArchitectureMap({ project }: { project: Project }) {
 
   return (
     <div>
-      <svg viewBox={`0 0 ${width} ${height}`} className="w-full" role="group" aria-label={`${project.title} architecture`}>
+      <div className="arch-scroll">
+      <svg viewBox={`0 0 ${width} ${height}`} className="h-auto w-full" role="group" aria-label={`${project.title} architecture`}>
         {architecture.edges.map(([from, to]) => {
           const start = at(from);
           const end = at(to);
@@ -76,6 +77,7 @@ export function ArchitectureMap({ project }: { project: Project }) {
           </g>
         ))}
       </svg>
+      </div>
       <div className="mt-4 border border-[var(--line)] p-5">
         <p className="kicker">How this piece connects</p>
         <p className="mt-3 text-xl leading-snug">{node.detail}</p>

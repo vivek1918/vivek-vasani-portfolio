@@ -12,8 +12,8 @@ export default function ResumePage() {
     <div className="site pb-8 pt-12">
       <p className="kicker">Resume</p>
       <div className="mt-4 flex flex-col justify-between gap-6 md:flex-row md:items-end">
-        <h1 className="max-w-3xl text-5xl tracking-[-0.045em] md:text-7xl">The document behind the site.</h1>
-        <div className="flex flex-wrap gap-3">
+        <h1 className="max-w-3xl text-[clamp(2.15rem,8vw,4.5rem)] tracking-[-0.045em]">The document behind the site.</h1>
+        <div className="resume-actions">
           <a className="btn" href={profile.resumeFile} download>
             Download resume
           </a>
@@ -23,9 +23,11 @@ export default function ResumePage() {
         </div>
       </div>
       <p className="mt-6 max-w-xl text-[var(--muted)]">
-        This is the supplied resume. Experience, education, and projects on the site follow it.
+        This is the supplied resume. Experience, education, and projects on the site follow it. On a phone, Open PDF uses the device viewer when the preview is too small to read.
       </p>
-      <iframe title="Vivek Vasani resume" src={profile.resumeFile} className="mt-10 h-[78vh] w-full border border-[var(--line)] bg-[var(--bg-raise)]" />
+      <div className="resume-frame">
+        <iframe title="Vivek Vasani resume" src={profile.resumeFile} />
+      </div>
     </div>
   );
 }

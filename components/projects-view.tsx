@@ -27,7 +27,7 @@ export function ProjectsView({ github }: { github: GithubPayload }) {
     <div className="site pb-8 pt-12">
       <p className="kicker">Projects</p>
       <div className="mt-4 flex flex-col justify-between gap-6 md:flex-row md:items-end">
-        <h1 className="max-w-3xl text-5xl tracking-[-0.045em] md:text-7xl">Engineering showcase</h1>
+        <h1 className="max-w-3xl text-[clamp(2.15rem,8vw,4.5rem)] tracking-[-0.045em]">Engineering showcase</h1>
         <p className="font-mono text-sm text-[var(--muted)]">
           {visible.length} of {projects.length} case studies
         </p>

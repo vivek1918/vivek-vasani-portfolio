@@ -15,7 +15,7 @@ export function CaseStudy({ project, related }: { project: Project; related: Pro
       </p>
       <div className="mt-6 grid gap-8 lg:grid-cols-12">
         <div className="lg:col-span-7">
-          <h1 className="text-5xl tracking-[-0.05em] md:text-7xl">{project.title}</h1>
+          <h1 className="text-[clamp(2.15rem,8vw,4.5rem)] tracking-[-0.05em]">{project.title}</h1>
           <p className="mt-6 max-w-xl text-xl leading-relaxed text-[var(--muted)]">{project.summary}</p>
         </div>
         <div className="lg:col-span-5 lg:pt-4">

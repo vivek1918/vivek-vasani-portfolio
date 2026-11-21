@@ -12,7 +12,7 @@ export function ExperienceView() {
   return (
     <div className="site pb-8 pt-12">
       <p className="kicker">Experience</p>
-      <h1 className="mt-4 max-w-3xl text-5xl tracking-[-0.045em] md:text-7xl">A short path, with the work attached.</h1>
+      <h1 className="mt-4 max-w-3xl text-[clamp(2.15rem,8vw,4.5rem)] tracking-[-0.045em]">A short path, with the work attached.</h1>
       <p className="mt-6 max-w-2xl text-lg text-[var(--muted)]">
         Three chapters from the resume. Dates are the ones printed there. Veefin is current, so the end date stays open.
       </p>
