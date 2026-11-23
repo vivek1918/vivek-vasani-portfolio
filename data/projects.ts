@@ -43,7 +43,10 @@ export const projects: Project[] = [
     stack: ["Python", "FastAPI", "Streamlit", "LangChain", "Groq", "FAISS", "Hugging Face"],
     github: "https://github.com/vivek1918/PhysioPlay1",
     repoName: "PhysioPlay1",
-    demo: null,
+    demo: {
+      href: "https://nextgenai.simppl.org/physioplay",
+      label: "Visit Live Project ↗",
+    },
     featured: true,
     layout: "feature",
     index: "01",

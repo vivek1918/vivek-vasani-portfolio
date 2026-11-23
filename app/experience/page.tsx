@@ -4,7 +4,7 @@ import { ExperienceView } from "@/components/experience-view";
 export const metadata: Metadata = {
   title: "Experience",
   description:
-    "Engineering at Veefin Solutions, an AI/ML fellowship at SimPPL, and a machine learning internship at IIT Patna.",
+    "Eight roles: software engineering at Veefin, examination operations at Programmatix, backend work at Faclon Labs, machine learning at IIT Patna, an AI/ML fellowship at SimPPL, campus work with E-Cell IIT Bombay, and UI/UX at WEBXELA.",
   alternates: { canonical: "/experience" },
 };
 

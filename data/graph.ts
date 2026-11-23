@@ -44,8 +44,8 @@ export const graphNodes: GraphNode[] = [
   { id: "graphmind", label: "GraphMind", kind: "project", summary: "GraphyRAG: documents become a Neo4j graph, then hybrid retrieval answers from it.", href: "/projects/graphmind" },
   { id: "fintech-analytics", label: "FinTech Analytics", kind: "project", summary: "A Python and SQLite lending analytics repository with a Drive walkthrough.", href: "/projects/fintech-analytics" },
   { id: "seating-arrangement", label: "Exam Seating", kind: "project", summary: "The public seating allocator from the IIT Patna internship.", href: "/projects/seating-arrangement" },
-  { id: "veefin", label: "Veefin", kind: "experience", summary: "Engineer since April 2026, across DevOps automation and Java/Spring Boot MDM services.", href: "/experience" },
-  { id: "simppl", label: "SimPPL", kind: "experience", summary: "AI/ML Fellow, February 2024 – March 2025. SocialPulse is the public assignment from that work.", href: "/experience" },
+  { id: "veefin", label: "Veefin", kind: "experience", summary: "Software Engineer, July 2026 – Present. A separate internship ran April 2026 – May 2026.", href: "/experience" },
+  { id: "simppl", label: "SimPPL", kind: "experience", summary: "AI/ML Fellow, February 2024 – April 2025. SocialPulse is the public assignment from that work.", href: "/experience" },
   { id: "iitp", label: "IIT Patna", kind: "experience", summary: "Machine Learning Intern, March 2025 – June 2025. Classification models with a reported 96–98% accuracy, plus the seating allocator.", href: "/experience" },
 ];
 

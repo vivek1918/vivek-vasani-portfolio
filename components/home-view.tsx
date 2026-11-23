@@ -96,7 +96,7 @@ function AboutPreview() {
         <h2 className="display mt-4 text-4xl md:text-6xl">More than just writing code.</h2>
         <p className="mt-6 text-lg leading-relaxed text-[var(--muted)]">{profile.summary}</p>
         <p className="mt-4 text-lg leading-relaxed text-[var(--muted)]">
-          I am finishing a B.Tech in Artificial Intelligence and Data Science at Dwarkadas J. Sanghvi College of Engineering, {profile.education.period}, with a CGPA of {profile.education.cgpa}. The roles so far are an AI/ML fellowship at SimPPL, a machine learning internship at IIT Patna, and engineering work at Veefin.
+          I am finishing a B.Tech in Artificial Intelligence and Data Science at Dwarkadas J. Sanghvi College of Engineering, {profile.education.period}, with a CGPA of {profile.education.cgpa}. The path runs from UI/UX and AI/ML work through backend engineering, with the current software engineering role at Veefin.
         </p>
         <Link href="/about" className="btn-text mt-8" data-cursor="About">
           <span>Read the full story</span>
@@ -108,7 +108,7 @@ function AboutPreview() {
             ["2022", "Started B.Tech, AI & Data Science"],
             ["2024", "SimPPL — AI/ML Fellow"],
             ["2025", "IIT Patna — Machine Learning Intern"],
-            ["2026", "Veefin — Engineer"],
+            ["2026", "Veefin — Software Engineer"],
           ].map(([year, label]) => (
             <li key={year} className="grid grid-cols-[4.5rem_1fr] gap-4 border-b border-[var(--line)] py-4">
               <span className="font-mono text-sm text-[var(--accent-text)]">{year}</span>
@@ -228,6 +228,15 @@ function ExperiencePreview() {
               </li>
             ))}
           </ul>
+          {current.projectLinks && current.projectLinks.length > 0 ? (
+            <div className="mt-6 flex flex-wrap gap-3">
+              {current.projectLinks.map((link) => (
+                <a key={link.href} className="btn" href={link.href} target="_blank" rel="noreferrer">
+                  {link.label}
+                </a>
+              ))}
+            </div>
+          ) : null}
           <Link href="/experience" className="btn-text mt-8">
             <span>Open the experience page</span>
           </Link>

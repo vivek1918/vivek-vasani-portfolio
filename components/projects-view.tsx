@@ -79,6 +79,16 @@ export function ProjectsView({ github }: { github: GithubPayload }) {
                   <Link href={`/projects/${project.slug}`}>{project.title}</Link>
                 </h2>
                 <p className="mt-3 max-w-md text-[var(--muted)]">{project.summary}</p>
+                <div className="mt-5 flex flex-wrap gap-3">
+                  <a className="btn-ghost" href={project.github} target="_blank" rel="noreferrer">
+                    GitHub
+                  </a>
+                  {project.demo ? (
+                    <a className="btn" href={project.demo.href} target="_blank" rel="noreferrer">
+                      {project.demo.label}
+                    </a>
+                  ) : null}
+                </div>
               </div>
               <Link href={`/projects/${project.slug}`} className="lg:col-span-6" data-cursor="Case study" aria-label={`Open the ${project.title} case study`}>
                 <ProjectPreview project={project} />

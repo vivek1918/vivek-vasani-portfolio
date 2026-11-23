@@ -31,11 +31,24 @@ export function CaseStudy({ project, related }: { project: Project; related: Pro
               GitHub repository
             </a>
             {project.demo ? (
-              <a className="btn-ghost" href={project.demo.href} target="_blank" rel="noreferrer">
+              <a
+                className={project.slug === "physioplay" ? "btn" : "btn-ghost"}
+                href={project.demo.href}
+                target="_blank"
+                rel="noreferrer"
+              >
                 {project.demo.label}
               </a>
             ) : null}
           </div>
+          {project.slug === "physioplay" && project.demo ? (
+            <p className="mt-4 break-all text-sm text-[var(--muted)]">
+              Official site:{" "}
+              <a href={project.demo.href} target="_blank" rel="noreferrer">
+                {project.demo.href}
+              </a>
+            </p>
+          ) : null}
         </div>
       </div>
 

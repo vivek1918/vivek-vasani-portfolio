@@ -481,6 +481,124 @@ html[data-theme="light"] .overlay { background: rgba(243, 240, 231, 0.78); }
   .contact-actions .btn-ghost { width: 100%; }
 }
 
+.xp-stats {
+  display: grid;
+  gap: 1px;
+  margin-top: 2.5rem;
+  background: var(--line);
+  border: 1px solid var(--line);
+}
+
+.xp-stats li {
+  background: var(--bg);
+  padding: 1.1rem 1rem 1.2rem;
+}
+
+.xp-stats span {
+  display: block;
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(2rem, 6vw, 3rem);
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: var(--accent-text);
+}
+
+.xp-stats p {
+  margin-top: 0.55rem;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.xp-list {
+  list-style: none;
+  margin: 2.5rem 0 0;
+  padding: 0;
+}
+
+.xp-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1.1rem minmax(0, 1fr);
+  gap: 0.9rem;
+  padding-bottom: 1.25rem;
+}
+
+.xp-item::before {
+  content: "";
+  position: absolute;
+  left: 0.42rem;
+  top: 0.35rem;
+  bottom: 0;
+  width: 1px;
+  background: var(--line);
+}
+
+.xp-item:last-child::before { bottom: auto; height: 0.7rem; }
+
+.xp-mark {
+  position: relative;
+  z-index: 1;
+  width: 0.95rem;
+  height: 0.95rem;
+  margin-top: 0.35rem;
+  border: 1px solid var(--accent-text);
+  border-radius: 999px;
+  background: var(--bg);
+}
+
+.xp-current .xp-mark {
+  background: var(--lime);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--lime) 18%, transparent);
+}
+
+.xp-card {
+  min-width: 0;
+  border: 1px solid var(--line);
+  background: var(--bg-raise);
+  padding: 1.1rem 1rem 1.2rem;
+}
+
+.xp-current .xp-card { border-color: color-mix(in srgb, var(--lime) 45%, var(--line)); }
+
+.xp-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.6rem;
+  padding: 0 0.5rem;
+  background: var(--lime);
+  color: var(--lime-ink);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.xp-badge-quiet {
+  background: transparent;
+  color: var(--accent-text);
+  border: 1px solid var(--line-strong);
+}
+
+.xp-toggle {
+  margin-top: 1rem;
+  min-height: 2.75rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font-size: 0.78rem;
+  font-weight: 650;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+@media (min-width: 768px) {
+  .xp-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .xp-item { grid-template-columns: 1.25rem minmax(0, 1fr); gap: 1.25rem; }
+  .xp-card { padding: 1.4rem 1.4rem 1.5rem; }
+}
+
 .skip {
   position: absolute;
   left: 1rem;

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { profile } from "@/data/profile";
-import { experiences } from "@/data/experience";
+import { experiencesByStart } from "@/data/experience";
 import { builds, interests, philosophy } from "@/data/story";
 import { certificates } from "@/data/certificates";
 import { projects } from "@/data/projects";
@@ -36,10 +36,7 @@ export function AboutView() {
               </p>
             </div>
           </li>
-          {experiences
-            .slice()
-            .reverse()
-            .map((item) => (
+          {experiencesByStart.map((item) => (
               <li key={item.id} className="grid gap-2 border-b border-[var(--line)] py-6 md:grid-cols-[9rem_1fr]">
                 <p className="font-mono text-sm text-[var(--accent-text)]">{item.period}</p>
                 <div>
