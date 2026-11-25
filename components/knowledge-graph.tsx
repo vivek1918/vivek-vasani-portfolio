@@ -1,84 +1,68 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useReducedMotion } from "framer-motion";
 import {
-  forceCenter,
-  forceCollide,
-  forceLink,
-  forceManyBody,
-  forceSimulation,
-  forceX,
-  forceY,
-  type Simulation,
-  type SimulationNodeDatum,
-} from "d3-force";
-import { select } from "d3-selection";
-import { zoom, zoomIdentity, type ZoomBehavior } from "d3-zoom";
-import {
-  graphFilters,
-  graphLinks,
-  graphNode,
-  graphNodes,
-  graphPaths,
-  neighborsOf,
-  pathEdge,
-  visibleNodeIds,
-  type GraphFilter,
-  type GraphNode,
-} from "@/data/graph";
+  searchUniverse,
+  universeChildren,
+  universeFilters,
+  universeLinks,
+  universeNeighbors,
+  universeNode,
+  universeNodes,
+  universeParent,
+  universeProgressive,
+  universeTrail,
+  universeVisible,
+  type UniverseFilter,
+  type UniverseNode,
+} from "@/data/universe";
 
-type SimNode = SimulationNodeDatum & GraphNode;
+const UniverseScene = dynamic(() => import("@/components/universe-scene").then((mod) => mod.UniverseScene), {
+  ssr: false,
+  loading: () => <div className="universe-canvas grid place-items-center text-sm text-[#929ba5]">Opening the universe…</div>,
+});
 
-const kindColor: Record<GraphNode["kind"], string> = {
-  language: "var(--node-language)",
-  technology: "var(--node-technology)",
-  tool: "var(--node-tool)",
-  project: "var(--node-project)",
-  experience: "var(--node-experience)",
-  concept: "var(--node-concept)",
-};
+function webglAvailable() {
+  try {
+    const canvas = document.createElement("canvas");
+    return Boolean(canvas.getContext("webgl2") || canvas.getContext("webgl"));
+  } catch {
+    return false;
+  }
+}
+
+function openedFrom(id?: string) {
+  if (!id || !universeNode(id)) {
+    return { selected: "vivek", expanded: [] as string[], pinned: [] as string[], trail: ["vivek"], panel: false };
+  }
+  const trail = universeTrail(id);
+  return { selected: id, expanded: [id], pinned: trail, trail, panel: true };
+}
 
 export function KnowledgeGraph({ focusId }: { focusId?: string }) {
-  const router = useRouter();
-  const svgRef = useRef<SVGSVGElement>(null);
-  const layerRef = useRef<SVGGElement>(null);
-  const nodeRefs = useRef(new Map<string, SVGGElement>());
-  const linkRefs = useRef(new Map<string, SVGLineElement>());
-  const positions = useRef(new Map<string, { x: number; y: number }>());
-  const simRef = useRef<Simulation<SimNode, undefined> | null>(null);
-  const dragRef = useRef<{ id: string; moved: boolean; x: number; y: number } | null>(null);
-  const zoomRef = useRef<ZoomBehavior<SVGSVGElement, unknown> | null>(null);
-  const fitRef = useRef<(force?: boolean) => void>(() => {});
-  const fitted = useRef(false);
-  const [filter, setFilter] = useState<GraphFilter>("All");
+  const reduce = useReducedMotion();
+  const start = openedFrom(focusId);
+  const [filter, setFilter] = useState<UniverseFilter>("All");
   const [query, setQuery] = useState("");
-  const [pathId, setPathId] = useState<string | null>(null);
-  const [selected, setSelected] = useState(focusId && graphNode(focusId) ? focusId : "python");
-  const [hovered, setHovered] = useState<string | null>(null);
-  const [transform, setTransform] = useState({ x: 40, y: 24, k: 1 });
+  const [selected, setSelected] = useState(start.selected);
+  const [expanded, setExpanded] = useState<string[]>(start.expanded);
+  const [pinned, setPinned] = useState<string[]>(start.pinned);
+  const [trail, setTrail] = useState<string[]>(start.trail);
+  const [panelOpen, setPanelOpen] = useState(start.panel);
+  const [autoRotate, setAutoRotate] = useState(true);
+  const [resetSignal, setResetSignal] = useState(0);
+  const [menu, setMenu] = useState<{ id: string; x: number; y: number } | null>(null);
   const [compact, setCompact] = useState(false);
-
-  const path = graphPaths.find((item) => item.id === pathId) ?? null;
-  const visible = useMemo(() => {
-    const ids = visibleNodeIds(filter, query);
-    path?.nodes.forEach((id) => ids.add(id));
-    return ids;
-  }, [filter, path, query]);
-  const nodes = graphNodes.filter((node) => visible.has(node.id));
-  const links = graphLinks.filter((link) => visible.has(link.source) && visible.has(link.target));
-  const active = graphNode(selected);
-  const related = useMemo(() => {
-    if (path) return new Set(path.nodes);
-    return selected ? new Set([selected, ...neighborsOf(selected)]) : new Set<string>();
-  }, [path, selected]);
+  const [explore, setExplore] = useState(false);
+  const stage = useRef<HTMLDivElement>(null);
+  const [webgl, setWebgl] = useState(true);
+  const [live, setLive] = useState(true);
 
   useEffect(() => {
-    if (focusId && graphNode(focusId)) setSelected(focusId);
-  }, [focusId]);
-
-  useEffect(() => {
-    const media = window.matchMedia("(max-width: 767px)");
+    setWebgl(webglAvailable());
+    const media = window.matchMedia("(max-width: 899px)");
     const apply = () => setCompact(media.matches);
     apply();
     media.addEventListener("change", apply);
@@ -86,353 +70,367 @@ export function KnowledgeGraph({ focusId }: { focusId?: string }) {
   }, []);
 
   useEffect(() => {
-    const ids = visibleNodeIds(filter, query);
-    graphPaths.find((item) => item.id === pathId)?.nodes.forEach((id) => ids.add(id));
-    const sourceNodes = graphNodes.filter((node) => ids.has(node.id));
-    const sourceLinks = graphLinks.filter((link) => ids.has(link.source) && ids.has(link.target));
-    const simNodes: SimNode[] = sourceNodes.map((node) => {
-      const previous = positions.current.get(node.id);
-      return { ...node, x: previous?.x ?? 480 + (Math.random() - 0.5) * 80, y: previous?.y ?? 280 + (Math.random() - 0.5) * 80 };
-    });
-    const sim = forceSimulation(simNodes)
-      .force(
-        "link",
-        forceLink<SimNode, { source: string; target: string }>(sourceLinks.map((link) => ({ ...link })))
-          .id((node) => node.id)
-          .distance(compact ? 78 : 108)
-          .strength(0.42),
-      )
-      .force("charge", forceManyBody().strength(compact ? -160 : -240))
-      .force("center", forceCenter(500, 300))
-      .force("x", forceX(500).strength(0.08))
-      .force("y", forceY(300).strength(0.08))
-      .force("collide", forceCollide(compact ? 26 : 34))
-      .alpha(0.95);
-
-    const paint = () => {
-      simNodes.forEach((node) => {
-        positions.current.set(node.id, { x: node.x ?? 0, y: node.y ?? 0 });
-        nodeRefs.current.get(node.id)?.setAttribute("transform", `translate(${node.x ?? 0},${node.y ?? 0})`);
-      });
-      sourceLinks.forEach((link) => {
-        const source = simNodes.find((node) => node.id === link.source);
-        const target = simNodes.find((node) => node.id === link.target);
-        const line = linkRefs.current.get(`${link.source}|${link.target}`);
-        if (!source || !target || !line) return;
-        line.setAttribute("x1", String(source.x ?? 0));
-        line.setAttribute("y1", String(source.y ?? 0));
-        line.setAttribute("x2", String(target.x ?? 0));
-        line.setAttribute("y2", String(target.y ?? 0));
-      });
-    };
-
-    sim.on("tick", paint);
-    sim.on("end", () => {
-      paint();
-      requestAnimationFrame(() => fitRef.current(false));
-    });
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduced) {
-      for (let step = 0; step < 140; step += 1) sim.tick();
-      sim.stop();
-      paint();
-      requestAnimationFrame(() => fitRef.current(false));
-    }
-    simRef.current = sim;
-    return () => {
-      sim.stop();
-    };
-  }, [compact, filter, pathId, query]);
-
-  useLayoutEffect(() => {
-    positions.current.forEach((point, id) => {
-      nodeRefs.current.get(id)?.setAttribute("transform", `translate(${point.x},${point.y})`);
-    });
-  });
-
-  useEffect(() => {
-    const svg = svgRef.current;
-    const layer = layerRef.current;
-    if (!svg || !layer) return;
-    const behavior = zoom<SVGSVGElement, unknown>()
-      .scaleExtent([0.55, 2.6])
-      .filter((event) => {
-        if (event.type === "wheel") return true;
-        const target = event.target;
-        return !(target instanceof Element && target.closest("[data-node]"));
-      })
-      .on("zoom", (event) => {
-        const next = event.transform;
-        setTransform({ x: next.x, y: next.y, k: next.k });
-      });
-    const selection = select(svg);
-    selection.call(behavior);
-    selection.call(behavior.transform, zoomIdentity.translate(40, 24));
-    zoomRef.current = behavior;
-    return () => {
-      selection.on(".zoom", null);
-      zoomRef.current = null;
-    };
+    const node = stage.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(([entry]) => setLive(entry.isIntersecting), { threshold: 0.05 });
+    observer.observe(node);
+    return () => observer.disconnect();
   }, []);
 
-  fitRef.current = (force = false) => {
-    if (!force && fitted.current) return;
-    const svg = svgRef.current;
-    const behavior = zoomRef.current;
-    if (!svg || !behavior) return;
-    const points = Array.from(visible)
-      .map((id) => positions.current.get(id))
-      .filter((point): point is { x: number; y: number } => Boolean(point));
-    if (points.length < 2) return;
-    if (!force && points.some((point) => point.x === 0 && point.y === 0)) return;
-    const minX = Math.min(...points.map((point) => point.x));
-    const maxX = Math.max(...points.map((point) => point.x));
-    const minY = Math.min(...points.map((point) => point.y));
-    const maxY = Math.max(...points.map((point) => point.y));
-    const width = Math.max(120, maxX - minX + 120);
-    const height = Math.max(120, maxY - minY + 120);
-    const k = Math.min(1.8, Math.max(0.55, Math.min(900 / width, 520 / height)));
-    const x = 500 - ((minX + maxX) / 2) * k;
-    const y = 320 - ((minY + maxY) / 2) * k;
-    fitted.current = true;
-    select(svg).call(behavior.transform, zoomIdentity.translate(x, y).scale(k));
-  };
+  useEffect(() => {
+    if (!focusId || !universeNode(focusId)) return;
+    const next = openedFrom(focusId);
+    setSelected(next.selected);
+    setExpanded(next.expanded);
+    setPinned(next.pinned);
+    setTrail(next.trail);
+    setPanelOpen(true);
+    setFilter("All");
+  }, [focusId]);
 
-  const pointInLayer = (event: React.PointerEvent) => {
-    const svg = svgRef.current;
-    const layer = layerRef.current;
-    if (!svg || !layer) return null;
-    const point = svg.createSVGPoint();
-    point.x = event.clientX;
-    point.y = event.clientY;
-    const matrix = layer.getScreenCTM();
-    if (!matrix) return null;
-    return point.matrixTransform(matrix.inverse());
-  };
-
-  const move = (event: React.PointerEvent<SVGSVGElement>) => {
-    if (dragRef.current) {
-      const local = pointInLayer(event);
-      const node = simRef.current?.nodes().find((item) => item.id === dragRef.current?.id);
-      if (!local || !node) return;
-      if (Math.hypot(event.clientX - dragRef.current.x, event.clientY - dragRef.current.y) > 4) dragRef.current.moved = true;
-      node.fx = local.x;
-      node.fy = local.y;
-      simRef.current?.alpha(0.25).restart();
-    }
-  };
-
-  const endPointer = () => {
-    const drag = dragRef.current;
-    if (drag && !drag.moved) choose(drag.id);
-    if (drag) {
-      const node = simRef.current?.nodes().find((item) => item.id === drag.id);
-      if (node) {
-        node.fx = node.x;
-        node.fy = node.y;
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA")) return;
+      if (event.key === "Escape") {
+        setMenu(null);
+        setPanelOpen(false);
       }
-    }
-    dragRef.current = null;
-  };
+      if (event.key === "Backspace") {
+        event.preventDefault();
+        setTrail((current) => {
+          if (current.length < 2) return current;
+          const next = current.slice(0, -1);
+          setSelected(next[next.length - 1] ?? "vivek");
+          setPanelOpen(true);
+          return next;
+        });
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
-  const choose = (id: string) => {
-    const node = graphNode(id);
-    if (selected === id && node?.href) {
-      router.push(node.href);
+  const visible = useMemo(() => universeProgressive(expanded, pinned, filter), [expanded, filter, pinned]);
+  const match = useMemo(() => universeVisible(filter), [filter]);
+  const nodes = useMemo(() => Array.from(visible).map((id) => universeNode(id)).filter((node): node is UniverseNode => Boolean(node)), [visible]);
+  const links = useMemo(
+    () =>
+      universeLinks.filter((link) => {
+        if (!visible.has(link.source) || !visible.has(link.target)) return false;
+        const source = universeNode(link.source);
+        const target = universeNode(link.target);
+        if (!source || !target) return false;
+        const overview = (source.id === "vivek" || source.category === "domain") && (target.id === "vivek" || target.category === "domain");
+        const parentLinked = universeParent(link.source) === link.target || universeParent(link.target) === link.source;
+        const opened =
+          (expanded.includes(link.source) && universeChildren(link.source).some((child) => child.id === link.target)) ||
+          (expanded.includes(link.target) && universeChildren(link.target).some((child) => child.id === link.source));
+        return overview || parentLinked || opened;
+      }),
+    [expanded, visible],
+  );
+  const active = universeNode(selected);
+  const children = active ? universeChildren(active.id) : [];
+  const childIds = new Set(children.map((node) => node.id));
+  const neighbors = active ? universeNeighbors(active.id).filter((item) => visible.has(item.node.id) && !childIds.has(item.node.id)) : [];
+  const gather = active ? universeChildren(active.id).map((node) => node.id).filter((id) => visible.has(id)) : [];
+  const hot = useMemo(() => {
+    if (!selected || !visible.has(selected)) return new Set<string>();
+    return new Set([selected, ...universeNeighbors(selected).map((item) => item.node.id)].filter((id) => visible.has(id)));
+  }, [selected, visible]);
+  const results = searchUniverse(query);
+  const sectionLabel = !active
+    ? "Explore"
+    : active.category === "project"
+      ? "Technologies"
+      : active.category === "skill"
+        ? "Used in"
+        : active.category === "company"
+          ? "Roles"
+          : active.category === "domain"
+            ? "In this domain"
+            : "Connected";
+
+  const reveal = (id: string, depth: 1 | 2 = 1) => {
+    const node = universeNode(id);
+    if (!node) {
+      setSelected("");
+      setPanelOpen(false);
+      setMenu(null);
       return;
     }
+    const path = universeTrail(id);
+    const nextLevel = depth === 2 ? universeChildren(id).map((child) => child.id) : [];
     setSelected(id);
+    setPanelOpen(true);
+    setMenu(null);
+    setQuery("");
+    setPinned(path);
+    setExpanded((current) => Array.from(new Set(current.concat(id, nextLevel))));
+    setTrail(path);
+  };
+
+  const goTo = (id: string) => {
+    if (!universeNode(id)) return;
+    const path = universeTrail(id);
+    setSelected(id);
+    setPanelOpen(true);
+    setMenu(null);
+    setPinned(path);
+    setTrail(path);
+  };
+
+  const collapseBranch = (id: string) => {
+    const drop = new Set<string>();
+    const walk = (current: string) => {
+      universeChildren(current).forEach((child) => {
+        if (drop.has(child.id)) return;
+        drop.add(child.id);
+        walk(child.id);
+      });
+    };
+    walk(id);
+    setExpanded((current) => current.filter((item) => item !== id && !drop.has(item)));
+    setPinned((current) => current.filter((item) => !drop.has(item)));
+    if (selected === id || drop.has(selected)) {
+      setSelected(id);
+      setTrail(universeTrail(id));
+    }
+    setMenu(null);
+  };
+
+  const expandAll = () => {
+    setExpanded(universeNodes.map((node) => node.id));
+    setMenu(null);
+  };
+
+  const collapseAll = () => {
+    setExpanded([]);
+    setPinned([]);
+    setSelected("vivek");
+    setTrail(["vivek"]);
+    setPanelOpen(false);
+    setMenu(null);
+    setQuery("");
+    setResetSignal((value) => value + 1);
   };
 
   const reset = () => {
-    positions.current.clear();
-    simRef.current?.nodes().forEach((node) => {
-      node.fx = null;
-      node.fy = null;
-      node.x = 480 + (Math.random() - 0.5) * 120;
-      node.y = 280 + (Math.random() - 0.5) * 120;
-    });
-    simRef.current?.alpha(0.9).restart();
-    setQuery("");
     setFilter("All");
-    setPathId(null);
-    fitted.current = false;
-    const svg = svgRef.current;
-    const behavior = zoomRef.current;
-    if (svg && behavior) select(svg).call(behavior.transform, zoomIdentity.translate(40, 24));
-    window.setTimeout(() => fitRef.current(true), 700);
-  };
-
-  const zoomBy = (factor: number) => {
-    const svg = svgRef.current;
-    const behavior = zoomRef.current;
-    if (!svg || !behavior) return;
-    behavior.scaleBy(select(svg), factor);
-  };
-
-  const showPath = (id: string) => {
-    const next = graphPaths.find((item) => item.id === id);
-    if (!next) return;
-    setPathId((current) => (current === id ? null : id));
-    setFilter("All");
-    setSelected(next.nodes[next.nodes.length - 1]);
-    window.setTimeout(() => fitRef.current(true), 500);
+    collapseAll();
   };
 
   return (
     <section className="site mt-16 md:mt-28" id="graph">
-      <p className="kicker">03 — Engineering universe</p>
-      <h2 className="display mt-4 max-w-4xl text-[clamp(2.4rem,5vw,4.4rem)]">The engineering universe — how everything connects.</h2>
-      <p className="mt-4 max-w-2xl text-lg text-[var(--muted)]">
-        A map of languages, tools, projects, and roles. Every line is a relationship from the resume or a public repository.
-      </p>
-      <div className="mt-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Filter the graph">
-          {graphFilters.map((item) => (
-            <button key={item} type="button" className={item === filter ? "btn !min-h-9" : "btn-ghost !min-h-9"} aria-pressed={item === filter} onClick={() => setFilter(item)}>
-              {item}
-            </button>
-          ))}
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <label className="sr-only" htmlFor="graph-search">Search nodes</label>
-          <input
-            id="graph-search"
-            className="field w-full !py-2 sm:w-56"
-            value={query}
-            placeholder="Search nodes"
-            onChange={(event) => setQuery(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key !== "ArrowDown" && event.key !== "ArrowUp" && event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
-              event.preventDefault();
-              const step = event.key === "ArrowDown" || event.key === "ArrowRight" ? 1 : -1;
-              const index = nodes.findIndex((node) => node.id === selected);
-              const next = nodes[(index + step + nodes.length) % nodes.length];
-              if (next) setSelected(next.id);
-            }}
-          />
-          <button type="button" className="btn-ghost !min-h-9" onClick={() => zoomBy(1.12)} aria-label="Zoom in">+</button>
-          <button type="button" className="btn-ghost !min-h-9" onClick={() => zoomBy(0.9)} aria-label="Zoom out">−</button>
-          <button type="button" className="btn-ghost !min-h-9" onClick={reset}>Reset</button>
-        </div>
+      <p className="kicker">03 — Universe</p>
+      <div className="mt-4 max-w-3xl">
+        <h2 className="text-4xl tracking-[-0.04em] md:text-6xl">Explore my professional universe.</h2>
+        <p className="mt-4 text-lg leading-relaxed text-[var(--muted)]">
+          Discover the connections between my skills, projects, experiences and engineering journey.
+        </p>
+        <p className="mt-3 font-mono text-xs uppercase tracking-[0.14em] text-[var(--faint)]">Click a node to explore its connections.</p>
       </div>
-      <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="Relationship paths">
-        {graphPaths.map((item) => (
-          <button key={item.id} type="button" className={item.id === pathId ? "btn !min-h-9" : "btn-ghost !min-h-9"} aria-pressed={item.id === pathId} onClick={() => showPath(item.id)}>
-            {item.label}
-          </button>
-        ))}
-      </div>
-      <ul className="mt-4 flex flex-wrap gap-4 text-xs uppercase tracking-[0.12em] text-[var(--muted)]" aria-label="Node legend">
-        {(["language", "technology", "tool", "project", "experience", "concept"] as const).map((kind) => (
-          <li key={kind} className="flex items-center gap-2">
-            <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: kindColor[kind] }} />
-            {kind}
-          </li>
-        ))}
-      </ul>
-      <div className="mt-6 grid gap-6 lg:grid-cols-12">
-        <div className="graph relative border border-[var(--line)] bg-[var(--bg-2)] lg:col-span-8">
-          <svg
-            ref={svgRef}
-            viewBox="0 0 1000 640"
-            className="h-[520px] w-full touch-none md:h-[640px]"
-            role="application"
-            aria-label="Engineering knowledge graph"
-            onPointerMove={move}
-            onPointerUp={endPointer}
-            onPointerLeave={endPointer}
-          >
-            <g ref={layerRef} transform={`translate(${transform.x} ${transform.y}) scale(${transform.k})`}>
-              {links.map((link) => {
-                const hot = pathEdge(path?.nodes, link.source, link.target) || Boolean(selected && !path && (link.source === selected || link.target === selected));
-                return (
-                  <line
-                    key={`${link.source}|${link.target}`}
-                    ref={(element) => {
-                      const key = `${link.source}|${link.target}`;
-                      if (element) linkRefs.current.set(key, element);
-                      else linkRefs.current.delete(key);
-                    }}
-                    className={hot ? "graph-hot" : undefined}
-                    stroke="var(--graph-line)"
-                    strokeWidth={hot ? 1.8 : 1}
-                    opacity={selected && !hot ? 0.15 : 1}
-                  />
-                );
-              })}
-              {nodes.map((node) => {
-                const dim = Boolean(selected) && !related.has(node.id);
-                const showLabel = !dim && (compact || hovered === node.id || related.has(node.id));
-                return (
-                  <g
-                    key={node.id}
-                    data-node={node.id}
-                    ref={(element) => {
-                      if (element) nodeRefs.current.set(node.id, element);
-                      else nodeRefs.current.delete(node.id);
-                    }}
-                    opacity={dim ? 0.18 : 1}
-                    style={{ cursor: "pointer" }}
-                    role="button"
-                    tabIndex={-1}
-                    aria-label={node.label}
-                    aria-pressed={node.id === selected}
-                    onPointerDown={(event) => {
-                      event.stopPropagation();
-                      dragRef.current = { id: node.id, moved: false, x: event.clientX, y: event.clientY };
-                    }}
-                    onPointerEnter={() => setHovered(node.id)}
-                    onPointerLeave={() => setHovered((current) => (current === node.id ? null : current))}
+
+      <div className={explore ? "universe-stage is-explore" : "universe-stage mt-8"} ref={stage} onContextMenu={(event) => event.preventDefault()}>
+        <div className="universe-toolbar">
+          <div className="universe-toolbar-row">
+            <label className="universe-search">
+              <span className="sr-only">Search the universe</span>
+              <input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Search projects, skills, companies…"
+                aria-label="Search the universe"
+              />
+              {results.length > 0 ? (
+                <ul>
+                  {results.map((node) => (
+                    <li key={node.id}>
+                      <button type="button" onClick={() => reveal(node.id)}>
+                        <span>{node.name}</span>
+                        <small>{node.category}</small>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </label>
+            <div className="universe-controls" role="toolbar" aria-label="Graph controls">
+              <button type="button" title="Back" aria-label="Back to parent" onClick={() => {
+                const parent = trail[trail.length - 2];
+                if (parent) goTo(parent);
+              }} disabled={trail.length < 2}>
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5" /></svg>
+              </button>
+              <button type="button" title="Collapse branch" aria-label="Collapse branch" onClick={() => active && collapseBranch(active.id)} disabled={!active || !expanded.includes(active.id)}>
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10" /></svg>
+              </button>
+              <button type="button" title="Expand all" aria-label="Expand all" onClick={expandAll}>
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v12M2 8h12" /></svg>
+              </button>
+              <button type="button" title="Collapse all" aria-label="Collapse all" onClick={collapseAll}>
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 5h10M3 11h10" /></svg>
+              </button>
+              <button type="button" title={autoRotate ? "Stop rotation" : "Rotate"} aria-label={autoRotate ? "Stop rotation" : "Rotate"} aria-pressed={autoRotate} onClick={() => setAutoRotate((value) => !value)}>
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13 8a5 5 0 1 1-1.5-3.5" /><path d="M12 2v3.5H8.5" /></svg>
+              </button>
+              <button type="button" title="Reset view" aria-label="Reset view" onClick={reset}>
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8a5 5 0 1 0 1.2-3.2" /><path d="M3 2.5V6h3.5" /></svg>
+              </button>
+              <button type="button" title="Clear selection" aria-label="Clear selection" onClick={() => { setSelected(""); setPanelOpen(false); }} disabled={!selected}>
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" /></svg>
+              </button>
+              <button type="button" title={explore ? "Exit exploration" : "Explore"} aria-label={explore ? "Exit exploration" : "Enter exploration"} aria-pressed={explore} onClick={() => setExplore((value) => !value)}>
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 6V3h3M10 3h3v3M13 10v3h-3M6 13H3v-3" /></svg>
+              </button>
+            </div>
+          </div>
+          <div className="universe-filters" role="toolbar" aria-label="Filter the universe">
+            {universeFilters.map((item) => (
+              <button key={item} type="button" className={item === filter ? "is-on" : ""} onClick={() => setFilter(item)} aria-pressed={item === filter}>
+                {item}
+              </button>
+            ))}
+          </div>
+          <nav className="universe-crumbs" aria-label="Graph path">
+            {trail.map((id, index) => {
+              const node = universeNode(id);
+              if (!node) return null;
+              return (
+                <span key={id}>
+                  {index > 0 ? <span aria-hidden="true"> / </span> : null}
+                  <button
+                    type="button"
+                    onClick={() => goTo(id)}
+                    aria-current={id === selected ? "true" : undefined}
                   >
-                    <circle r={node.id === selected ? 16 : 11} fill={kindColor[node.kind]} stroke={node.id === selected ? "var(--ink)" : "transparent"} strokeWidth="2" />
-                    {showLabel ? (
-                      <text x="16" y="4" fill="var(--ink)" fontSize="13" fontFamily="var(--font-mono), monospace">
-                        {node.label}
-                      </text>
-                    ) : null}
-                  </g>
-                );
-              })}
-            </g>
-          </svg>
-          <p className="sr-only" aria-live="polite">
-            {hovered ? `${graphNode(hovered)?.label}. ${graphNode(hovered)?.summary}` : ""}
-          </p>
+                    {node.category === "domain" ? node.name.replace("Artificial Intelligence & Machine Learning", "AI & ML").replace("Data Science & Analytics", "Data").replace("Leadership & Operations", "Leadership") : node.name}
+                  </button>
+                </span>
+              );
+            })}
+          </nav>
         </div>
-        <aside className="border border-[var(--line)] bg-[var(--bg-raise)] p-6 lg:col-span-4">
-          {active ? (
-            <>
-              <p className="kicker">{active.kind}</p>
-              <h3 className="mt-3 text-3xl tracking-[-0.04em]">{active.label}</h3>
-              <p className="mt-4 leading-relaxed text-[var(--muted)]">{active.summary}</p>
-              <div className="mt-6">
-                <p className="kicker">Connected</p>
-                <ul className="mt-3 space-y-2">
-                  {neighborsOf(active.id).map((id) => {
-                    const node = graphNode(id);
-                    if (!node) return null;
-                    return (
-                      <li key={id}>
-                        <button type="button" className="text-left hover:text-[var(--accent-text)]" onClick={() => setSelected(id)}>
-                          {node.label}
-                        </button>
-                      </li>
-                    );
-                  })}
+
+        {webgl ? (
+          <UniverseScene
+            nodes={nodes}
+            links={links}
+            selected={selected}
+            hot={hot}
+            match={match}
+            filterActive={filter !== "All"}
+            gather={gather}
+            path={trail}
+            reduce={Boolean(reduce)}
+            compact={compact}
+            panelOpen={panelOpen}
+            autoRotate={autoRotate}
+            resetSignal={resetSignal}
+            frameloop={live && !reduce ? "always" : "demand"}
+            onSelect={(id) => reveal(id)}
+            onOpen={(id) => reveal(id, 2)}
+            onMenu={(id, x, y) => setMenu({ id, x, y })}
+            onHover={() => undefined}
+          />
+        ) : (
+          <ul className="universe-fallback">
+            {nodes.map((node) => (
+              <li key={node.id}>
+                <button type="button" onClick={() => reveal(node.id)}>
+                  {node.name}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {expanded.length === 0 && pinned.length === 0 && filter === "All" ? (
+          <p className="universe-hint">Drag to look · Scroll to zoom · Click a domain to open it</p>
+        ) : null}
+
+        {panelOpen && active ? (
+          <aside className="universe-panel" aria-live="polite">
+            <div className="universe-panel-head">
+              <p className="kicker">{active.category}</p>
+              <button type="button" onClick={() => setPanelOpen(false)} aria-label="Close details">
+                Close
+              </button>
+            </div>
+            <h3>{active.name}</h3>
+            <p>{active.summary}</p>
+            {active.details.slice(0, 4).map((detail) => (
+              <p key={detail}>{detail}</p>
+            ))}
+            {children.length > 0 ? (
+              <div>
+                <p className="kicker">{sectionLabel}</p>
+                <ul>
+                  {children.slice(0, 16).map((node) => (
+                    <li key={node.id}>
+                      <button type="button" onClick={() => reveal(node.id)}>
+                        {node.name}
+                      </button>
+                    </li>
+                  ))}
                 </ul>
               </div>
-              {active.href ? (
-                <button type="button" className="btn mt-8" onClick={() => router.push(active.href || "/")}>
-                  {active.kind === "project" ? "Open case study" : "Open page"}
-                </button>
-              ) : null}
-              <p className="mt-4 text-sm text-[var(--faint)]">Arrow keys in search move the selection. Choose a project again to open it.</p>
-            </>
-          ) : (
-            <p className="text-[var(--muted)]">Nothing matches that search.</p>
-          )}
-        </aside>
+            ) : null}
+            {neighbors.length > 0 ? (
+              <div>
+                <p className="kicker">Also connected</p>
+                <ul>
+                  {neighbors.slice(0, 6).map((item) => (
+                    <li key={item.node.id}>
+                      <button type="button" onClick={() => reveal(item.node.id)}>
+                        {item.node.name}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+            {active.actions.length > 0 ? (
+              <div className="universe-actions">
+                {active.actions.map((action) => (
+                  <a key={action.href + action.label} className="btn" href={action.href} target={action.external ? "_blank" : undefined} rel={action.external ? "noreferrer" : undefined} download={action.download ? "" : undefined}>
+                    {action.label}
+                  </a>
+                ))}
+              </div>
+            ) : null}
+            {universeParent(active.id) ? (
+              <button type="button" className="universe-back" onClick={() => {
+                const parent = universeParent(active.id);
+                if (parent) goTo(parent);
+              }}>
+                Back to {universeNode(universeParent(active.id) ?? "")?.name}
+              </button>
+            ) : null}
+          </aside>
+        ) : null}
+
+        {menu ? (
+          <div className="universe-menu" style={{ left: menu.x, top: menu.y }} role="menu">
+            <button type="button" onClick={() => reveal(menu.id)}>Expand</button>
+            <button type="button" onClick={() => collapseBranch(menu.id)}>Collapse</button>
+            <button type="button" onClick={expandAll}>Expand all</button>
+            <button type="button" onClick={collapseAll}>Collapse all</button>
+            <button
+              type="button"
+              onClick={() => {
+                const parent = universeParent(menu.id);
+                if (parent) goTo(parent);
+              }}
+            >
+              Back to parent
+            </button>
+            {universeNode(menu.id)?.actions[0] ? (
+              <a href={universeNode(menu.id)?.actions[0]?.href}>{universeNode(menu.id)?.actions[0]?.label}</a>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     </section>
   );

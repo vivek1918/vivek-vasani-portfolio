@@ -1,3 +1,5 @@
+import { universeNode } from "@/data/universe";
+
 export type GraphKind = "language" | "technology" | "tool" | "project" | "experience" | "concept";
 export type GraphFilter = "All" | "Technologies" | "Projects" | "Experience" | "Tools";
 
@@ -102,6 +104,16 @@ export function neighborsOf(id: string) {
 }
 
 export function graphNode(id: string) {
+  const live = universeNode(id);
+  if (live) {
+    return {
+      id: live.id,
+      label: live.name,
+      kind: "project" as GraphKind,
+      summary: live.summary,
+      href: `/?node=${live.id}#graph`,
+    };
+  }
   return graphNodes.find((node) => node.id === id);
 }
 
