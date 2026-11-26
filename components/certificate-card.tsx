@@ -1,38 +1,36 @@
 "use client";
 
-import { useState } from "react";
 import type { Certificate } from "@/data/certificates";
+import { CertificatePreview } from "@/components/certificate-preview";
+import { certificateViewHref } from "@/data/certificate-previews";
 
 export function CertificateCard({ certificate }: { certificate: Certificate }) {
-  const [failed, setFailed] = useState(false);
-  const preview = `https://drive.google.com/thumbnail?id=${certificate.fileId}&sz=w1000`;
+  const viewHref = certificateViewHref(certificate.href);
 
   return (
-    <article className="border border-[var(--line)]">
-      <div className="relative aspect-[16/10] overflow-hidden bg-[var(--bg-raise)]">
-        {failed ? (
-          <div className="flex h-full flex-col justify-between p-6">
-            <p className="kicker">Certificate</p>
-            <p className="max-w-xs text-3xl tracking-[-0.04em]">{certificate.name}</p>
-          </div>
-        ) : (
-          // Drive thumbnails are remote and may be blocked. The typographic card replaces a broken image.
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={preview}
-            alt=""
-            className="h-full w-full object-cover object-top"
-            onError={() => setFailed(true)}
-          />
-        )}
-      </div>
-      <div className="p-5">
+    <article className="cert-card">
+      <CertificatePreview
+        href={certificate.href}
+        title={certificate.name}
+        fileType={certificate.fileType}
+      />
+      <div className="cert-card-body">
         <h3 className="text-2xl tracking-[-0.03em]">{certificate.name}</h3>
         <p className="mt-2 text-[var(--muted)]">{certificate.issuer}</p>
-        <p className="mt-1 font-mono text-xs text-[var(--faint)]">{certificate.date ?? "Completion date not printed on the resume"}</p>
-        <a className="btn-text mt-4" href={certificate.href} target="_blank" rel="noreferrer">
-          <span>Open certificate</span>
-        </a>
+        <p className="mt-1 font-mono text-xs text-[var(--faint)]">
+          {certificate.date ?? "Completion date not printed on the certificate"}
+        </p>
+        {certificate.skills.length > 0 ? (
+          <p className="mt-3 text-sm text-[var(--muted)]">{certificate.skills.join(" · ")}</p>
+        ) : null}
+        <div className="cert-card-actions">
+          <a className="btn-text" href={viewHref} target="_blank" rel="noreferrer">
+            <span>View Certificate</span>
+          </a>
+          <a className="btn-text" href={certificate.href} download={certificate.fileName}>
+            <span>Download Certificate</span>
+          </a>
+        </div>
       </div>
     </article>
   );

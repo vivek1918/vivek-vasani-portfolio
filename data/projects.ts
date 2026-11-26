@@ -4,6 +4,15 @@ export type ArchitectureNode = {
   detail: string;
 };
 
+export type ProjectDocument = {
+  id: string;
+  title: string;
+  kind: string;
+  summary: string;
+  href: string;
+  fileName: string;
+};
+
 export type Project = {
   slug: string;
   title: string;
@@ -24,6 +33,7 @@ export type Project = {
   challenges: string[];
   implementation: string[];
   architecture: { nodes: ArchitectureNode[]; edges: [string, string][] } | null;
+  documents?: ProjectDocument[];
 };
 
 export const projectCategories = [
@@ -38,9 +48,10 @@ export const projects: Project[] = [
   {
     slug: "physioplay",
     title: "PhysioPlay",
-    summary: "A case-based physiotherapy chatbot that retrieves a patient scenario and answers in character through Groq.",
+    summary:
+      "An AI diagnostic-training platform for physiotherapy students: conversational patient personas, RAG-grounded case context, and instant feedback on proposed diagnoses.",
     categories: ["AI / ML"],
-    stack: ["Python", "FastAPI", "Streamlit", "LangChain", "Groq", "FAISS", "Hugging Face"],
+    stack: ["Python", "FastAPI", "Streamlit", "LangChain", "Groq", "FAISS", "Hugging Face", "RAG"],
     github: "https://github.com/vivek1918/PhysioPlay1",
     repoName: "PhysioPlay1",
     demo: {
@@ -51,29 +62,33 @@ export const projects: Project[] = [
     layout: "feature",
     index: "01",
     overview:
-      "PhysioPlay is a training-style chatbot for physiotherapy cases. A case file is embedded, retrieved, and used as the context for a Groq model that stays in the role of the patient. My resume describes it as a Mozilla-sponsored pilot used with 10 people.",
+      "PhysioPlay helps physiotherapy students practice diagnostic instinct and clinical reasoning against AI patient personas. The project report frames it as an accessible, gamified training loop: students interview a virtual patient, gather history and symptoms, propose a diagnosis, and receive immediate correctness feedback. The live SimPPL deployment is https://nextgenai.simppl.org/physioplay. The public implementation I point to uses case retrieval (embeddings + FAISS) and a Groq-backed conversational model that stays in the patient role.",
     problem:
-      "Reading a case on paper does not feel like interviewing a patient. The useful version has to answer questions from the case, and it has to refuse to hand over the diagnosis when someone asks for it directly.",
-    why: "I wanted a small clinical conversation loop: a source of truth for the case, retrieval so the model stays on that case, and a guard so the learning moment is not skipped.",
+      "Physiotherapy education is often theory-heavy, with limited risk-free practice interviewing patients. Students can graduate underprepared for real diagnostic conversations. Existing digital tools the report contrasts (such as PhysioU and Physiotutors) tend toward static pathways or query answering rather than open diagnostic dialogue, and can be costly to access.",
+    why:
+      "The useful product is a repeatable clinical conversation: a grounded case as source of truth, retrieval so the model stays on that case, a patient persona that answers history-taking questions, and feedback when the learner commits to a diagnosis — without simply handing over the answer mid-interview.",
     contribution:
-      "The public repository is my fork of buddhadevyash/PhysioPlay. The code there is the implementation I point to: a FastAPI service and a Streamlit interface over the same retrieval pattern. I am not presenting the upstream Vercel deployment as my own live demo.",
+      "The public repository is my fork of buddhadevyash/PhysioPlay. The code there is the implementation I point to: a FastAPI service and a Streamlit interface over the same retrieval-augmented conversation pattern. The supporting project report documents the problem framing, related-work interviews, solution design, and working-prototype flow. Official live project: https://nextgenai.simppl.org/physioplay.",
     features: [
-      "Random selection of a JSON physiotherapy case.",
-      "Embeddings of the case stored in a FAISS index.",
-      "A LangChain retrieval chain in front of ChatGroq.",
-      "A diagnostic-question filter that answers with a patient-style deflection instead of the diagnosis.",
-      "A Streamlit chat layout and a FastAPI entrypoint in the same repository.",
+      "Conversational AI patient personas grounded in real-style physiotherapy case material.",
+      "Retrieval-Augmented Generation so replies stay tied to the selected case context.",
+      "Diagnostic practice loop: history-taking questions, then a committed diagnosis with correctness feedback.",
+      "Random selection of a case, FAISS-backed embeddings, and a LangChain retrieval chain in front of ChatGroq (public repo).",
+      "A diagnostic-question filter that deflects direct diagnosis asks so the learner still does the reasoning.",
+      "Streamlit chat UI and FastAPI entrypoint in the same repository; live project hosted with SimPPL.",
     ],
     challenges: [
-      "The patient role collapses if the model quotes the diagnosis. The code checks the question against diagnostic patterns before it answers.",
+      "The patient role collapses if the model quotes the diagnosis early. The public code checks questions against diagnostic patterns before answering.",
       "Each session has to remember whether the case is loaded, whether the user is ready, and whether the diagnosis has already been revealed.",
-      "The same interaction exists as both a Streamlit app and a FastAPI app, so the behavior had to stay consistent across two entrypoints.",
+      "The same interaction exists as both a Streamlit app and a FastAPI app, so behavior had to stay consistent across entrypoints.",
+      "The product report emphasizes accessible delivery (including WhatsApp-oriented access in the written design). The public GitHub fork I document is the FastAPI/Streamlit implementation.",
     ],
     implementation: [
       "ppv01.py is the Streamlit client. It reads the Groq key from Streamlit secrets and builds a FAISS store from the selected case JSON.",
       "back.py is the FastAPI application. It uses the same LangChain pieces: HuggingFace embeddings, FAISS, a stuff-documents chain, and ChatGroq.",
       "Case files live in a JSON folder. One file is chosen at random and turned into the retrieval corpus for that session.",
-      "There is no separate hosted demo I can verify as mine. The GitHub repository is the source of truth.",
+      "The working-prototype flow in the project report matches the product loop: load a case, confirm start, interview the persona, then submit a diagnosis for feedback.",
+      "Live project: https://nextgenai.simppl.org/physioplay. Supporting report PDF is linked from this case study.",
     ],
     architecture: {
       nodes: [
@@ -93,6 +108,17 @@ export const projects: Project[] = [
         ["llm", "api"],
       ],
     },
+    documents: [
+      {
+        id: "physioplay-report",
+        title: "PhysioPlay Project Report",
+        kind: "Project report",
+        summary:
+          "Source project report covering executive summary, problem statement, related work and user interviews, solution design, market segmentation, and working-prototype walkthrough for PhysioPlay.",
+        href: "/documents/physioplay/PhysioPlay-Report.pdf",
+        fileName: "PhysioPlay-Report.pdf",
+      },
+    ],
   },
   {
     slug: "socialpulse",

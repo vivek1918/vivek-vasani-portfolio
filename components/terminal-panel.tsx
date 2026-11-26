@@ -5,6 +5,7 @@ import { useReducedMotion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { profile } from "@/data/profile";
 import { projects } from "@/data/projects";
+import { researchPapers } from "@/data/research";
 import { skills } from "@/data/skills";
 import { experiences } from "@/data/experience";
 import { useSite } from "@/components/providers";
@@ -16,6 +17,7 @@ const help = [
   "about       short introduction",
   "projects    list case studies",
   "open <name> open a case study",
+  "research    list research papers",
   "skills      list skill groups",
   "experience  list roles",
   "github      open GitHub",
@@ -76,6 +78,12 @@ export function TerminalPanel() {
       return go(`/projects/${match.slug}`, `Opening ${match.title}.`);
     }
     if (head === "skills") return say(skills.map((skill) => `${skill.group} — ${skill.name}`).join("\n"));
+    if (head === "research") {
+      return go(
+        "/research",
+        researchPapers.map((paper) => `${paper.statusLabel}  ${paper.shortTitle}  ${paper.pdfHref}`).join("\n"),
+      );
+    }
     if (head === "experience") return say(experiences.map((item) => `${item.role}, ${item.org} (${item.period})`).join("\n"));
     if (head === "github") {
       say("Opening GitHub.");

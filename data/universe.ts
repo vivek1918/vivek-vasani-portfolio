@@ -3,6 +3,7 @@ import { experienceDocuments } from "@/data/documents";
 import { experiences } from "@/data/experience";
 import { profile } from "@/data/profile";
 import { projects } from "@/data/projects";
+import { researchPapers } from "@/data/research";
 import { skills } from "@/data/skills";
 
 export type UniverseCategory =
@@ -13,6 +14,7 @@ export type UniverseCategory =
   | "project"
   | "skill"
   | "education"
+  | "research"
   | "document"
   | "certificate"
   | "presence";
@@ -53,6 +55,7 @@ export const universeFilters = [
   "Backend",
   "DevOps",
   "Education",
+  "Research",
   "Certifications",
   "Documents",
 ] as const;
@@ -172,7 +175,7 @@ function build() {
     { id: "iot", name: "Industrial IoT", summary: "The Faclon Labs internship, using MongoDB, Redis, RabbitMQ, and InfluxDB." },
     { id: "uiux", name: "UI/UX Design", summary: "The WEBXELA internship, with the certificate and letter of recommendation." },
     { id: "leadership", name: "Leadership & Operations", summary: "Examination operations at Programmatix and campus programs with E-Cell, IIT Bombay." },
-    { id: "education", name: "Education & Research", summary: "B.Tech studies at DJ Sanghvi and the IIT Patna machine learning internship." },
+    { id: "education", name: "Education & Research", summary: "B.Tech studies at DJ Sanghvi, unpublished GRAPHMIND and Stable Diffusion research, and the IIT Patna machine learning internship." },
   ];
 
   domains.forEach((domain) => {
@@ -372,7 +375,116 @@ function build() {
   link("classification", "dl", "model");
   link("classification", "domain-aiml", "skill");
 
+  const ensureConcept = (id: string, name: string, summary: string) => {
+    if (seen.has(id)) return id;
+    add({
+      id,
+      name,
+      category: "skill",
+      summary,
+      details: [],
+      layer: 3,
+      cluster: "aiml",
+      importance: 2,
+      domains: ["aiml", "education"],
+      actions: [{ label: "Open research", href: "/research" }],
+    });
+    link(id, "domain-aiml", "skill");
+    skillByName.set(keyOf(name), id);
+    return id;
+  };
+
+  researchPapers.forEach((paper) => {
+    add({
+      id: paper.graphNodeId,
+      name: paper.shortTitle,
+      category: "research",
+      summary: paper.summary,
+      details: [
+        `Category: ${paper.category}.`,
+        `Authors: ${paper.authors.join(", ")}.`,
+        `Institution: ${paper.institution}.`,
+        paper.guide ? `Project guide: ${paper.guide}.` : "",
+        `Publication status: ${paper.statusLabel}. Not IEEE-published, journal-published, conference-published, or peer-reviewed.`,
+        `Main technologies: ${paper.technologies.slice(0, 8).join(", ")}.`,
+        paper.reportedFindings[0] ?? "",
+      ].filter(Boolean),
+      layer: 2,
+      cluster: "education",
+      importance: 4,
+      domains: ["education", "aiml"],
+      actions: [
+        { label: "Read document", href: paper.pdfHref, external: true },
+        { label: "Download PDF", href: paper.pdfHref, download: true },
+        { label: "Research page", href: `/research#research-${paper.id}` },
+      ],
+    });
+    link(paper.graphNodeId, "vivek", "authored");
+    link(paper.graphNodeId, "domain-education", "domain");
+    link(paper.graphNodeId, "domain-aiml", "domain");
+    link(paper.graphNodeId, "djsce", "institution");
+
+    (paper.graphConcepts ?? []).forEach((concept) => {
+      ensureConcept(concept.id, concept.name, concept.summary);
+      link(paper.graphNodeId, concept.id, "uses");
+    });
+
+    (paper.graphSkills ?? []).forEach((skillName) => {
+      const id =
+        skillByName.get(keyOf(skillName)) ??
+        ensureSkill(skillName, "aiml", `Documented technology or method in ${paper.shortTitle}.`);
+      link(paper.graphNodeId, id, "uses");
+    });
+
+    (paper.relatedProjectIds ?? []).forEach((projectId) => {
+      if (seen.has(projectId)) link(paper.graphNodeId, projectId, "related-project");
+    });
+
+    add({
+      id: paper.graphPdfNodeId,
+      name: `${paper.shortTitle} PDF`,
+      category: "document",
+      summary: `Original PDF for ${paper.title}. ${paper.statusLabel}.`,
+      details: ["Research paper", paper.status, paper.category],
+      layer: 3,
+      cluster: "education",
+      importance: 2,
+      domains: ["education", "aiml"],
+      actions: [
+        { label: "Read PDF", href: paper.pdfHref, external: true },
+        { label: "Download PDF", href: paper.pdfHref, download: true },
+        { label: "Research page", href: `/research#research-${paper.id}` },
+      ],
+    });
+    link(paper.graphPdfNodeId, paper.graphNodeId, "document");
+  });
+
+  projects.forEach((project) => {
+    (project.documents ?? []).forEach((document) => {
+      add({
+        id: document.id,
+        name: document.title,
+        category: "document",
+        summary: document.summary,
+        details: [document.kind, project.title],
+        layer: 3,
+        cluster: domainForCategory(project.categories[0] ?? ""),
+        importance: 2,
+        domains: project.categories.map(domainForCategory),
+        actions: [
+          { label: "Read document", href: document.href, external: true },
+          { label: "Download PDF", href: document.href, download: true },
+          { label: "Open case study", href: `/projects/${project.slug}` },
+        ],
+      });
+      link(document.id, project.slug, "document");
+    });
+  });
+
+  const certificateHrefs = new Set(certificates.map((certificate) => certificate.href));
   experienceDocuments.forEach((document) => {
+    // Same asset already exposed as a certificate node — avoid a duplicate graph record.
+    if (certificateHrefs.has(document.href)) return;
     const cluster = experienceCluster[document.experienceId] ?? "software";
     add({
       id: document.id,
@@ -396,24 +508,40 @@ function build() {
   });
 
   certificates.forEach((certificate) => {
+    const skillLine = certificate.skills.length ? `Skills: ${certificate.skills.join(", ")}.` : "";
+    const dateLine = certificate.date ?? "Completion date is not printed on the certificate.";
     add({
       id: certificate.id,
       name: certificate.name,
       category: "certificate",
-      summary: `${certificate.issuer}. ${certificate.date ?? "Completion date is not printed on the resume."}`,
-      details: [],
+      summary: `${certificate.issuer}. ${dateLine}`,
+      details: [
+        skillLine,
+        certificate.credentialId ? `Credential ID: ${certificate.credentialId}.` : "",
+        certificate.note ?? "",
+      ].filter(Boolean),
       layer: 3,
-      cluster: "education",
+      cluster: certificate.cluster,
       importance: 2,
-      domains: ["education"],
-      actions: [{ label: "Open certificate", href: certificate.href, external: true }],
+      domains: certificate.domains,
+      actions: [
+        { label: "View Certificate", href: certificate.href, external: true },
+        { label: "Download Certificate", href: certificate.href, download: true },
+      ],
     });
-    link(certificate.id, "djsce", "credential");
     link(certificate.id, "domain-education", "credential");
     link(certificate.id, "vivek", "credential");
+    if (certificate.domains.includes("education") || certificate.relatedNodeIds?.includes("djsce")) {
+      link(certificate.id, "djsce", "credential");
+    }
+    certificate.skillIds.forEach((skillId) => link(certificate.id, skillId, "credential"));
+    certificate.domains.forEach((domain) => {
+      if (domain !== "education") link(certificate.id, `domain-${domain}`, "credential");
+    });
+    certificate.relatedNodeIds?.forEach((relatedId) => {
+      if (relatedId !== "djsce") link(certificate.id, relatedId, "credential");
+    });
   });
-  link("altair-ml", "ml", "credential");
-  link("google-python", "python", "credential");
 
   add({
     id: "github-profile",
@@ -514,7 +642,11 @@ function build() {
     else if (node.category === "presence") parentId = "vivek";
     else if (node.category === "document") {
       const experience = linkedNodes(node).find((item) => item.category === "experience");
+      const research = linkedNodes(node).find((item) => item.category === "research");
+      const project = linkedNodes(node).find((item) => item.category === "project");
       if (experience) parentId = experience.id;
+      else if (research) parentId = research.id;
+      else if (project) parentId = project.id;
     } else {
       const relatedProjects = linkedNodes(node)
         .filter((item) => item.category === "project")
@@ -522,7 +654,8 @@ function build() {
       const relatedExperience = linkedNodes(node)
         .filter((item) => item.category === "experience")
         .sort((a, b) => b.importance - a.importance || a.id.localeCompare(b.id));
-      parentId = relatedProjects[0]?.id ?? relatedExperience[0]?.id ?? parentId;
+      const relatedResearch = linkedNodes(node).find((item) => item.category === "research");
+      parentId = relatedProjects[0]?.id ?? relatedExperience[0]?.id ?? relatedResearch?.id ?? parentId;
     }
     anchors.set(node.id, parentId);
     const list = groups.get(parentId) ?? [];
@@ -571,7 +704,9 @@ export function universeParent(id: string) {
     const org = universeNeighbors(id).find((item) => item.node.category === "company");
     return org?.node.id ?? anchors.get(id) ?? `domain-${node.cluster}`;
   }
-  if (node.category === "company" || node.category === "project" || node.category === "education") return `domain-${node.cluster}`;
+  if (node.category === "company" || node.category === "project" || node.category === "education" || node.category === "research") {
+    return `domain-${node.cluster}`;
+  }
   return anchors.get(id) ?? `domain-${node.cluster}`;
 }
 
@@ -606,8 +741,13 @@ export function universeChildren(id: string) {
   else if (self.category === "experience") {
     neighbors.filter((node) => node.category === "project" || node.category === "skill" || node.category === "document").forEach(keep);
   } else if (self.category === "project") neighbors.filter((node) => node.category === "skill").forEach(keep);
-  else if (self.category === "education") neighbors.filter((node) => node.category === "certificate" || node.category === "experience").forEach(keep);
-  else if (self.category === "skill") neighbors.filter((node) => node.category === "project" || node.category === "experience").forEach(keep);
+  else if (self.category === "education") {
+    neighbors.filter((node) => node.category === "certificate" || node.category === "experience" || node.category === "research").forEach(keep);
+  } else if (self.category === "research") {
+    neighbors.filter((node) => node.category === "skill" || node.category === "document").forEach(keep);
+  } else if (self.category === "skill") {
+    neighbors.filter((node) => node.category === "project" || node.category === "experience" || node.category === "research").forEach(keep);
+  }
   return Array.from(unique.values()).sort((a, b) => b.importance - a.importance || a.name.localeCompare(b.name));
 }
 
@@ -622,6 +762,9 @@ function matchesFilter(node: UniverseNode, filter: UniverseFilter) {
   if (filter === "Projects") return node.category === "project";
   if (filter === "Skills") return node.category === "skill";
   if (filter === "Experience") return node.category === "experience" || node.category === "company";
+  if (filter === "Research") {
+    return node.category === "research" || node.id.includes("research-pdf") || (node.category === "document" && node.name.includes("Research Paper"));
+  }
   if (filter === "Certifications") return node.category === "certificate";
   if (filter === "Documents") return node.category === "document";
   const cluster = filterCluster[filter];
@@ -685,6 +828,9 @@ export function universeVisible(filter: UniverseFilter) {
     if (filter === "Backend" && node.domains.includes("backend")) ids.add(node.id);
     if (filter === "DevOps" && node.domains.includes("devops")) ids.add(node.id);
     if (filter === "Education" && (node.category === "education" || node.domains.includes("education"))) ids.add(node.id);
+    if (filter === "Research" && (node.category === "research" || (node.category === "document" && node.name.toLowerCase().includes("research")))) {
+      ids.add(node.id);
+    }
     if (filter === "Certifications" && node.category === "certificate") ids.add(node.id);
     if (filter === "Documents" && node.category === "document") ids.add(node.id);
   });
@@ -694,9 +840,29 @@ export function universeVisible(filter: UniverseFilter) {
 export function searchUniverse(query: string) {
   const needle = query.trim().toLowerCase();
   if (!needle) return [];
+  const tokens = needle.split(/[^a-z0-9]+/).filter(Boolean);
   return universeNodes
-    .filter((node) => node.name.toLowerCase().includes(needle) || node.summary.toLowerCase().includes(needle))
-    .slice(0, 8);
+    .map((node) => {
+      const name = node.name.toLowerCase();
+      const summary = node.summary.toLowerCase();
+      const details = node.details.join(" ").toLowerCase();
+      const haystack = `${name} ${summary} ${details} ${node.category}`;
+      const phraseHit = haystack.includes(needle);
+      const tokenHit = tokens.length > 0 && tokens.every((token) => haystack.includes(token));
+      if (!phraseHit && !tokenHit) return null;
+      let score = 0;
+      if (name === needle) score += 100;
+      if (name.includes(needle)) score += 40;
+      if (tokenHit) score += 20 + tokens.length * 5;
+      if (node.category === "research") score += 25;
+      if (summary.includes(needle)) score += 10;
+      if (details.includes(needle)) score += 5;
+      return { node, score };
+    })
+    .filter((item): item is { node: UniverseNode; score: number } => Boolean(item))
+    .sort((a, b) => b.score - a.score || a.node.name.localeCompare(b.node.name))
+    .slice(0, 12)
+    .map((item) => item.node);
 }
 
 export function validateUniverse() {
@@ -708,8 +874,15 @@ export function validateUniverse() {
     if (node.position.some((value) => !Number.isFinite(value))) issues.push(`Bad position ${node.id}`);
     node.actions.forEach((action) => {
       if (!action.href) issues.push(`Missing URL on ${node.id}`);
-      if (node.category === "document" && action.href.startsWith("/documents/") && !action.href.endsWith(".pdf")) {
+      if (
+        node.category === "document" &&
+        (action.href.startsWith("/documents/") || action.href.startsWith("/research/")) &&
+        !action.href.endsWith(".pdf")
+      ) {
         issues.push(`Invalid document path ${action.href}`);
+      }
+      if (node.category === "certificate" && action.href.startsWith("/certificates/") && !action.href.match(/\.(pdf|jpg|jpeg|png|webp)$/i)) {
+        issues.push(`Invalid certificate path ${action.href}`);
       }
     });
   });

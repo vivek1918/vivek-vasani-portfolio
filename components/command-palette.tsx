@@ -2,11 +2,13 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { certificates } from "@/data/certificates";
 import { navItems, profile } from "@/data/profile";
 import { projects } from "@/data/projects";
+import { researchPapers } from "@/data/research";
 import { useSite } from "@/components/providers";
 
-type Command = { id: string; label: string; hint: string; run: () => void };
+type Command = { id: string; label: string; hint: string; keywords?: string; run: () => void };
 
 export function CommandPalette() {
   const { paletteOpen, setPaletteOpen } = useSite();
@@ -50,10 +52,71 @@ export function CommandPalette() {
         hint: "Project",
         run: go(`/projects/${project.slug}`),
       })),
+      ...certificates.map((certificate) => ({
+        id: `cert-${certificate.id}`,
+        label: certificate.name,
+        hint: `Certificate · ${certificate.issuer}`,
+        keywords: [
+          certificate.name,
+          certificate.issuer,
+          ...certificate.skills,
+          certificate.cluster,
+          ...(certificate.relatedNodeIds ?? []),
+          "certificate",
+          "completion certificate",
+        ].join(" "),
+        run: () => {
+          setPaletteOpen(false);
+          window.open(certificate.href, "_blank", "noopener,noreferrer");
+        },
+      })),
+      { id: "about-certs", label: "Browse certifications", hint: "Page", run: go("/about") },
+      ...researchPapers.flatMap((paper) => [
+        {
+          id: `research-${paper.id}`,
+          label: paper.shortTitle,
+          hint: "Research",
+          keywords: [paper.title, paper.category, paper.statusLabel, ...paper.authors, ...paper.technologies, "unpublished", "research"].join(" "),
+          run: go(`/research#research-${paper.id}`),
+        },
+        {
+          id: `research-read-${paper.id}`,
+          label: `Read ${paper.shortTitle}`,
+          hint: "PDF",
+          keywords: `${paper.title} research paper pdf read unpublished ${paper.category}`,
+          run: external(paper.pdfHref),
+        },
+        {
+          id: `research-download-${paper.id}`,
+          label: `Download ${paper.shortTitle} PDF`,
+          hint: "PDF",
+          keywords: `${paper.title} research download pdf unpublished`,
+          run: () => {
+            setPaletteOpen(false);
+            const link = document.createElement("a");
+            link.href = paper.pdfHref;
+            link.download = paper.pdfFileName;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+          },
+        },
+        {
+          id: `research-graph-${paper.id}`,
+          label: `${paper.shortTitle} in universe`,
+          hint: "Graph",
+          keywords: `${paper.title} research universe ${paper.category} ${paper.technologies.join(" ")}`,
+          run: go(`/?node=${paper.graphNodeId}#graph`),
+        },
+      ]),
     ];
   }, [router, setPaletteOpen]);
 
-  const results = commands.filter((command) => command.label.toLowerCase().includes(query.trim().toLowerCase()));
+  const results = commands.filter((command) => {
+    const needle = query.trim().toLowerCase();
+    if (!needle) return true;
+    return `${command.label} ${command.hint} ${command.keywords ?? ""}`.toLowerCase().includes(needle);
+  });
 
   useEffect(() => {
     if (!paletteOpen) return;

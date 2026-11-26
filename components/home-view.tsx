@@ -6,6 +6,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { profile } from "@/data/profile";
 import { projects } from "@/data/projects";
 import { experiences } from "@/data/experience";
+import { researchPapers } from "@/data/research";
 import { skillGroups, skills } from "@/data/skills";
 import type { GithubPayload } from "@/lib/github";
 import { KnowledgeGraph } from "@/components/knowledge-graph";
@@ -20,10 +21,11 @@ export function HomeView({ github, focusNode }: { github: GithubPayload; focusNo
       <AboutPreview />
       <KnowledgeGraph focusId={focusNode} />
       <Featured />
+      <ResearchPreview />
       <ExperiencePreview />
       <SkillsPreview />
       <section className="site mt-16 md:mt-28" id="github">
-        <SectionLabel index="07" text="GitHub" />
+        <SectionLabel index="08" text="GitHub" />
         <div className="mt-6 flex flex-col justify-between gap-4 md:flex-row md:items-end">
           <h2 className="max-w-xl text-4xl tracking-[-0.04em] md:text-6xl">Public work, read from GitHub.</h2>
           <a className="btn-ghost" href={profile.github} target="_blank" rel="noreferrer">
@@ -189,12 +191,59 @@ function Tilt({ children }: { children: React.ReactNode }) {
   );
 }
 
+function ResearchPreview() {
+  return (
+    <section className="site mt-16 border-t border-[var(--line)] pt-10 md:mt-28" id="research">
+      <SectionLabel index="05" text="Research" />
+      <div className="mt-4 flex flex-col justify-between gap-4 md:flex-row md:items-end">
+        <h2 className="max-w-2xl text-4xl tracking-[-0.04em] md:text-6xl">Unpublished academic research.</h2>
+        <Link className="btn-ghost" href="/research">
+          Open research
+        </Link>
+      </div>
+      <ul className="research-list">
+        {researchPapers.map((paper) => (
+          <li key={paper.id}>
+            <article className="research-card">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="research-status">{paper.statusLabel}</span>
+                <span className="kicker">{paper.category}</span>
+              </div>
+              <h3 className="mt-4 text-[clamp(1.45rem,3.5vw,2.1rem)] tracking-[-0.04em]">{paper.title}</h3>
+              <p className="mt-4 max-w-3xl text-lg leading-relaxed text-[var(--muted)]">{paper.summary}</p>
+              <p className="mt-4 text-sm text-[var(--muted)]">{paper.authors.join(" · ")}</p>
+              <ul className="mt-5 flex flex-wrap gap-2">
+                {paper.technologies.slice(0, 6).map((tech) => (
+                  <li key={tech} className="chip">
+                    {tech}
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <a className="btn" href={paper.pdfHref} target="_blank" rel="noreferrer">
+                  Read document
+                </a>
+                <a className="btn-ghost" href={paper.pdfHref} download={paper.pdfFileName}>
+                  Download PDF
+                </a>
+                <Link className="btn-ghost" href={`/research#research-${paper.id}`}>
+                  Research card
+                </Link>
+              </div>
+            </article>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 function ExperiencePreview() {
   const [active, setActive] = useState(experiences[0].id);
   const current = experiences.find((item) => item.id === active) ?? experiences[0];
   return (
     <section className="site mt-20 border-t border-[var(--line)] pt-12">
-      <SectionLabel index="05" text="Experience" />
+      <SectionLabel index="06" text="Experience" />
       <h2 className="mt-4 max-w-xl text-4xl tracking-[-0.04em] md:text-5xl">Roles, with the work named.</h2>
       <div className="mt-8 grid gap-8 lg:grid-cols-12">
         <div className="lg:col-span-5">
@@ -251,7 +300,7 @@ function SkillsPreview() {
   const items = skills.filter((skill) => skill.group === group);
   return (
     <section className="site mt-16 border-t border-[var(--line)] pt-10 md:mt-24">
-      <SectionLabel index="06" text="Stack" />
+      <SectionLabel index="07" text="Stack" />
       <h2 className="mt-4 max-w-xl text-4xl tracking-[-0.04em] md:text-5xl">Technologies tied to a project or a role.</h2>
       <div className="mt-8 flex flex-wrap gap-2">
         {skillGroups.map((item) => (
@@ -278,7 +327,7 @@ function SkillsPreview() {
 function ContactPreview() {
   return (
     <section className="site mt-16 border-t border-[var(--line)] pt-10 md:mt-28 md:pt-14">
-      <p className="kicker">08 — Contact</p>
+      <p className="kicker">09 — Contact</p>
       <h2 className="display mt-4 max-w-4xl text-[clamp(2.8rem,7vw,5.6rem)]">Let’s create something that matters.</h2>
       <p className="mt-6 max-w-2xl text-lg leading-relaxed text-[var(--muted)]">
         Have an interesting idea, a challenging engineering problem, or an opportunity to collaborate? I&apos;d love to hear about it.

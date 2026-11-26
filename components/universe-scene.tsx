@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Html, OrbitControls } from "@react-three/drei";
 import { AdditiveBlending, BufferAttribute, BufferGeometry, Color, InstancedMesh, Object3D, Points, Vector3 } from "three";
@@ -19,6 +19,7 @@ const colors: Record<UniverseNode["category"], string> = {
   education: "#56d9e8",
   document: "#c4b5e8",
   certificate: "#d6c7f2",
+  research: "#9fd4c4",
   presence: "#56d9e8",
 };
 
@@ -32,6 +33,19 @@ const shortName: Record<string, string> = {
   "domain-uiux": "UI/UX",
   "domain-leadership": "Leadership",
   "domain-education": "Education",
+  "graphmind-research": "GRAPHMIND Research",
+  "graphmind-research-pdf": "GRAPHMIND PDF",
+  "sdxl-research": "SDXL Research",
+  "sdxl-research-pdf": "SDXL PDF",
+  "physioplay-report": "PhysioPlay Report",
+  graphrag: "GraphRAG",
+  "knowledge-graphs": "Knowledge Graphs",
+  "rdf-owl": "RDF/OWL",
+  "semantic-search": "Semantic Search",
+  "computer-vision": "Computer Vision",
+  "diffusion-models": "Diffusion Models",
+  gans: "GANs",
+  "high-res-image-synthesis": "Hi-Res Synthesis",
 };
 
 type Vec = [number, number, number];
@@ -212,14 +226,26 @@ function GraphNode({
   const target = useRef(new Vector3(...display));
   const hold = useRef(0);
   const born = useRef(performance.now() + (node.category === "identity" ? 0 : node.category === "domain" ? 220 + Math.abs(node.position[0]) * 90 : 80));
-  const base = node.category === "identity" ? 0.62 : node.category === "domain" ? 0.38 : node.category === "project" ? 0.2 : node.layer === 2 ? 0.16 : 0.1;
-  const size = base * (compact ? 1.12 : 1);
+  const pressed = useRef(false);
+  const base =
+    node.category === "identity"
+      ? 0.34
+      : node.category === "domain"
+        ? 0.2
+        : node.category === "project"
+          ? 0.12
+          : node.category === "company" || node.category === "experience" || node.category === "education" || node.category === "research"
+            ? 0.11
+            : node.layer === 2
+              ? 0.1
+              : 0.07;
+  const size = base * (compact ? 1.08 : 1);
   const major = node.category === "identity" || node.category === "domain";
   useFrame(({ clock }, delta) => {
-    target.current.set(display[0], display[1] + (reduce || selected ? 0 : Math.sin(clock.elapsedTime * 0.7 + node.importance) * 0.045), display[2]);
+    target.current.set(display[0], display[1] + (reduce || selected ? 0 : Math.sin(clock.elapsedTime * 0.7 + node.importance) * 0.03), display[2]);
     const next = current.current.lerp(target.current, reduce ? 1 : 1 - Math.exp(-delta * 5.5));
     const appear = reduce ? 1 : Math.min(1, Math.max(0, performance.now() - born.current) / 640);
-    const scale = (0.15 + 0.85 * (1 - (1 - appear) ** 3)) * (hovered ? 1.16 : selected ? 1.08 : 1);
+    const scale = (0.2 + 0.8 * (1 - (1 - appear) ** 3)) * (hovered ? 1.12 : selected ? 1.06 : 1);
     if (mesh.current) {
       mesh.current.position.copy(next);
       mesh.current.scale.setScalar(scale);
@@ -247,6 +273,10 @@ function GraphNode({
         ref={mesh}
         onClick={(event) => {
           event.stopPropagation();
+          if (pressed.current) {
+            pressed.current = false;
+            return;
+          }
           onSelect(node.id);
         }}
         onDoubleClick={(event) => {
@@ -261,35 +291,42 @@ function GraphNode({
         onPointerOut={() => {
           onHover("");
           document.body.style.cursor = "";
+          window.clearTimeout(hold.current);
         }}
         onContextMenu={(event) => {
           event.stopPropagation();
           event.nativeEvent.preventDefault();
+          if (compact) return;
           onMenu(node.id, event.nativeEvent.clientX, event.nativeEvent.clientY);
         }}
         onPointerDown={(event) => {
+          if (event.button !== 0) return;
           window.clearTimeout(hold.current);
           const x = event.nativeEvent.clientX;
           const y = event.nativeEvent.clientY;
-          hold.current = window.setTimeout(() => onMenu(node.id, x, y), 640);
+          hold.current = window.setTimeout(() => {
+            pressed.current = true;
+            onMenu(node.id, x, y);
+          }, 560);
         }}
         onPointerUp={() => window.clearTimeout(hold.current)}
+        onPointerMove={() => window.clearTimeout(hold.current)}
       >
         <sphereGeometry args={[size, selected ? 24 : 16, selected ? 24 : 16]} />
         <meshStandardMaterial color={colors[node.category]} emissive={colors[node.category]} emissiveIntensity={0.45} transparent />
         {showLabel || selected || hovered ? (
-          <Html position={[0, size + 0.16, 0]} center distanceFactor={compact ? 14 : 12} style={{ pointerEvents: "none" }} zIndexRange={[20, 0]}>
+          <Html position={[0, size + 0.18, 0]} center distanceFactor={compact ? 6 : 5.5} style={{ pointerEvents: "none" }} zIndexRange={[12, 0]} sprite>
             <span className={node.category === "identity" ? "universe-label is-core" : "universe-label"}>{shortName[node.id] ?? node.name}</span>
           </Html>
         ) : null}
       </mesh>
       <mesh ref={halo} raycast={() => null}>
-        <sphereGeometry args={[size * (major ? 2.4 : 1.8), 16, 16]} />
+        <sphereGeometry args={[size * (major ? 2.1 : 1.7), 16, 16]} />
         <meshBasicMaterial color={colors[node.category]} transparent opacity={0} depthWrite={false} blending={AdditiveBlending} />
       </mesh>
       {major ? (
         <mesh ref={ring} raycast={() => null} rotation={[Math.PI / 2.2, 0.4, 0]}>
-          <torusGeometry args={[size * 1.85, major && node.category === "identity" ? 0.018 : 0.01, 8, 56]} />
+          <torusGeometry args={[size * 1.7, node.category === "identity" ? 0.014 : 0.008, 8, 48]} />
           <meshBasicMaterial color={colors[node.category]} transparent opacity={0.4} depthWrite={false} blending={AdditiveBlending} />
         </mesh>
       ) : null}
@@ -323,7 +360,7 @@ function viewFrame(points: Vector3[], panel: "none" | "side" | "sheet", fov: num
   const center = points.reduce((sum, point) => sum.add(point), new Vector3()).multiplyScalar(1 / points.length);
   const vTan = Math.tan(fov / 2);
   const hTan = vTan * aspect;
-  const limits = { minX: -0.9, maxX: 0.9, minY: -0.9, maxY: 0.6 };
+  const limits = { minX: -0.78, maxX: 0.78, minY: -0.78, maxY: 0.62 };
   const projected = (distance: number) => {
     const cam = center.clone().add(back.clone().multiplyScalar(distance));
     return points.map((point) => {
@@ -488,7 +525,7 @@ function Stage({
     nodes.forEach((node) => map.set(node.id, displayOf(node, selectedNode, gather)));
     return map;
   }, [gather, nodes, selectedNode]);
-  const hoveredLabels = gather.length <= (compact ? 4 : 8);
+      const hoveredLabels = gather.length <= (compact ? 3 : 6);
   const lit = new Set<string>();
   const route = new Set<string>();
   hot.forEach((id) => lit.add(id));
@@ -537,6 +574,24 @@ function Stage({
   );
 }
 
+function ZoomBridge({ tick }: { tick: { id: number; factor: number } }) {
+  const { camera } = useThree();
+  const controls = useThree((state) => state.controls) as OrbitControlsImpl | null;
+  const seen = useRef(0);
+  useEffect(() => {
+    if (!controls || !tick.id || tick.id === seen.current) return;
+    seen.current = tick.id;
+    const offset = camera.position.clone().sub(controls.target);
+    offset.multiplyScalar(tick.factor);
+    const next = controls.target.clone().add(offset);
+    const distance = next.distanceTo(controls.target);
+    if (distance < 2.8 || distance > 40) return;
+    camera.position.copy(next);
+    controls.update();
+  }, [camera, controls, tick]);
+  return null;
+}
+
 export function UniverseScene({
   nodes,
   links,
@@ -551,6 +606,7 @@ export function UniverseScene({
   panelOpen,
   autoRotate,
   resetSignal,
+  zoomTick,
   frameloop,
   onSelect,
   onOpen,
@@ -570,6 +626,7 @@ export function UniverseScene({
   panelOpen: boolean;
   autoRotate: boolean;
   resetSignal: number;
+  zoomTick: { id: number; factor: number };
   frameloop: "always" | "demand";
   onSelect: (id: string) => void;
   onOpen: (id: string) => void;
@@ -581,7 +638,7 @@ export function UniverseScene({
   return (
     <Canvas
       className="universe-canvas"
-      camera={{ position: [1.6, 3.4, 8.2], fov: 42, near: 0.1, far: 80 }}
+      camera={{ position: [2.4, 2.8, 9.2], fov: 42, near: 0.1, far: 80 }}
       frameloop={frameloop}
       dpr={compact ? [1, 1.25] : [1, 1.5]}
       gl={{ antialias: !compact, powerPreference: "high-performance", alpha: false }}
@@ -609,6 +666,7 @@ export function UniverseScene({
           onHover(id);
         }}
       />
+      <ZoomBridge tick={zoomTick} />
       <OrbitControls
         ref={controls}
         enablePan
@@ -616,8 +674,8 @@ export function UniverseScene({
         dampingFactor={0.08}
         autoRotate={autoRotate && !reduce && (!selected || selected === "vivek")}
         autoRotateSpeed={0.28}
-        minDistance={2.4}
-        maxDistance={42}
+        minDistance={3.2}
+        maxDistance={40}
         makeDefault
       />
     </Canvas>

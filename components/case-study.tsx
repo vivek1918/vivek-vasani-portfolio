@@ -100,6 +100,29 @@ export function CaseStudy({ project, related }: { project: Project; related: Pro
         </ol>
       </section>
 
+      {project.documents && project.documents.length > 0 ? (
+        <section className="mt-16 border-t border-[var(--line)] pt-10">
+          <h2 className="text-3xl tracking-[-0.04em]">Supporting documents</h2>
+          <ul className="doc-list">
+            {project.documents.map((document) => (
+              <li key={document.id} className="xp-cert">
+                <p className="kicker">{document.kind}</p>
+                <p className="mt-2 text-2xl tracking-[-0.03em]">{document.title}</p>
+                <p className="mt-3 text-[var(--muted)]">{document.summary}</p>
+                <div className="mt-5 flex flex-wrap gap-3">
+                  <a className="btn" href={document.href} target="_blank" rel="noreferrer">
+                    Read document
+                  </a>
+                  <a className="btn-ghost" href={document.href} download={document.fileName}>
+                    Download PDF
+                  </a>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
       {inGraph ? (
         <p className="mt-16 border-t border-[var(--line)] pt-10">
           <Link href={`/?node=${project.slug}#graph`} className="btn-text">

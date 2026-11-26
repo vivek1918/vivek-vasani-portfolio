@@ -46,6 +46,10 @@ export const metadata: Metadata = {
     "machine learning",
     "FastAPI",
     "Spring Boot",
+    "GRAPHMIND",
+    "Semantic Knowledge Graph",
+    "GraphRAG",
+    "unpublished research",
     "Mumbai",
   ],
   icons: {

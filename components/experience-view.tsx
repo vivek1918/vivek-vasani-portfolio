@@ -4,8 +4,10 @@ import { useState } from "react";
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 import { experiences, type Experience } from "@/data/experience";
-import { documentsFor, experienceDocuments } from "@/data/documents";
+import { documentsFor, experienceDocuments, type ExperienceDocument } from "@/data/documents";
 import { projects } from "@/data/projects";
+import { CertificatePreview } from "@/components/certificate-preview";
+import { certificateViewHref } from "@/data/certificate-previews";
 
 const stats = [
   { value: "8", label: "Professional experiences" },
@@ -54,24 +56,65 @@ export function ExperienceView() {
         </p>
         <ul className="doc-list">
           {experienceDocuments.map((document) => (
-            <li key={document.id} className="xp-card">
-              <p className="kicker">{document.kind}</p>
-              <h3 className="mt-3 text-[clamp(1.4rem,3vw,1.8rem)] tracking-[-0.03em]">{document.title}</h3>
-              <p className="mt-1 text-lg">{document.org}</p>
-              <p className="mt-3 font-mono text-sm text-[var(--muted)]">{document.issued}</p>
-              <p className="mt-4 leading-relaxed text-[var(--muted)]">{document.summary}</p>
-              <div className="mt-5 flex flex-wrap gap-3">
-                <a className="btn" href={document.href} target="_blank" rel="noreferrer">
-                  View PDF
-                </a>
-                <a className="btn-ghost" href={`#xp-${document.experienceId}`}>
-                  On the timeline
-                </a>
+            <li key={document.id} className={document.kind === "Certificate" ? "xp-card xp-doc-cert" : "xp-card"}>
+              {document.kind === "Certificate" ? (
+                <CertificatePreview href={document.href} title={document.title} />
+              ) : null}
+              <div className={document.kind === "Certificate" ? "xp-doc-cert-body" : undefined}>
+                <p className="kicker">{document.kind}</p>
+                <h3 className="mt-3 text-[clamp(1.4rem,3vw,1.8rem)] tracking-[-0.03em]">{document.title}</h3>
+                <p className="mt-1 text-lg">{document.org}</p>
+                <p className="mt-3 font-mono text-sm text-[var(--muted)]">{document.issued}</p>
+                <p className="mt-4 leading-relaxed text-[var(--muted)]">{document.summary}</p>
+                <div className="mt-5 flex flex-wrap gap-3">
+                  <a
+                    className="btn"
+                    href={document.kind === "Certificate" ? certificateViewHref(document.href) : document.href}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {document.kind === "Certificate" ? "View Certificate" : "View PDF"}
+                  </a>
+                  <a
+                    className="btn-ghost"
+                    href={document.href}
+                    download={document.href.split("/").pop() ?? "document.pdf"}
+                  >
+                    {document.kind === "Certificate" ? "Download Certificate" : "Download PDF"}
+                  </a>
+                  <a className="btn-ghost" href={`#xp-${document.experienceId}`}>
+                    On the timeline
+                  </a>
+                </div>
               </div>
             </li>
           ))}
         </ul>
       </section>
+    </div>
+  );
+}
+
+function certificateFileName(href: string) {
+  return href.split("/").pop() ?? "certificate.pdf";
+}
+
+function CertificateActions({ document }: { document: ExperienceDocument }) {
+  const fileName = certificateFileName(document.href);
+  const viewHref = certificateViewHref(document.href);
+  return (
+    <div className="xp-cert">
+      <div className="xp-cert-body">
+        <p className="kicker">{document.title}</p>
+        <div className="xp-cert-actions">
+          <a className="btn" href={viewHref} target="_blank" rel="noreferrer">
+            View Certificate
+          </a>
+          <a className="btn-ghost" href={document.href} download={fileName}>
+            Download Certificate
+          </a>
+        </div>
+      </div>
     </div>
   );
 }
@@ -149,17 +192,28 @@ function ExperienceCard({
           </div>
         ) : null}
         {docs.length > 0 ? (
-          <div className="mt-5">
-            <p className="kicker">Documents</p>
-            <ul className="mt-3 flex flex-wrap gap-3">
-              {docs.map((document) => (
-                <li key={document.id}>
-                  <a className="btn-ghost" href={document.href} target="_blank" rel="noreferrer">
-                    {document.title}
-                  </a>
-                </li>
+          <div className="mt-5 space-y-3">
+            {docs
+              .filter((document) => document.kind === "Certificate")
+              .map((document) => (
+                <CertificateActions key={document.id} document={document} />
               ))}
-            </ul>
+            {docs.some((document) => document.kind !== "Certificate") ? (
+              <div>
+                <p className="kicker">Documents</p>
+                <ul className="mt-3 flex flex-wrap gap-3">
+                  {docs
+                    .filter((document) => document.kind !== "Certificate")
+                    .map((document) => (
+                      <li key={document.id}>
+                        <a className="btn-ghost" href={document.href} target="_blank" rel="noreferrer">
+                          {document.title}
+                        </a>
+                      </li>
+                    ))}
+                </ul>
+              </div>
+            ) : null}
           </div>
         ) : null}
         {item.related.length > 0 ? (

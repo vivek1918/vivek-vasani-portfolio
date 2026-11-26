@@ -1,7 +1,7 @@
 import { universeNode } from "@/data/universe";
 
-export type GraphKind = "language" | "technology" | "tool" | "project" | "experience" | "concept";
-export type GraphFilter = "All" | "Technologies" | "Projects" | "Experience" | "Tools";
+export type GraphKind = "language" | "technology" | "tool" | "project" | "experience" | "concept" | "research";
+export type GraphFilter = "All" | "Technologies" | "Projects" | "Experience" | "Tools" | "Research";
 
 export type GraphNode = {
   id: string;
@@ -16,7 +16,7 @@ export type GraphLink = {
   target: string;
 };
 
-export const graphFilters: GraphFilter[] = ["All", "Technologies", "Projects", "Experience", "Tools"];
+export const graphFilters: GraphFilter[] = ["All", "Technologies", "Projects", "Experience", "Tools", "Research"];
 
 export const graphPaths: { id: string; label: string; nodes: string[] }[] = [
   { id: "physio", label: "Python → FastAPI → PhysioPlay", nodes: ["python", "fastapi", "physioplay"] },
@@ -41,7 +41,7 @@ export const graphNodes: GraphNode[] = [
   { id: "neo4j", label: "Neo4j", kind: "technology", summary: "The graph database in GraphMind." },
   { id: "classification", label: "DRCNN / DGAN / EMA-IDS", kind: "concept", summary: "Models built during the IIT Patna research internship. The resume reports 96–98% accuracy." },
   { id: "mdm", label: "MDM services", kind: "concept", summary: "Spring Boot services for the MDM team at Veefin." },
-  { id: "physioplay", label: "PhysioPlay", kind: "project", summary: "A FastAPI and Streamlit physiotherapy chatbot. The public repository is a fork.", href: "/projects/physioplay" },
+  { id: "physioplay", label: "PhysioPlay", kind: "project", summary: "AI physiotherapy diagnostic-training platform with RAG-grounded patient personas. Live at nextgenai.simppl.org/physioplay.", href: "/projects/physioplay" },
   { id: "socialpulse", label: "SocialPulse", kind: "project", summary: "A SimPPL research-engineering assignment: a dashboard and RAG assistant over Reddit posts.", href: "/projects/socialpulse" },
   { id: "graphmind", label: "GraphMind", kind: "project", summary: "GraphyRAG: documents become a Neo4j graph, then hybrid retrieval answers from it.", href: "/projects/graphmind" },
   { id: "fintech-analytics", label: "FinTech Analytics", kind: "project", summary: "A Python and SQLite lending analytics repository with a Drive walkthrough.", href: "/projects/fintech-analytics" },
@@ -49,6 +49,43 @@ export const graphNodes: GraphNode[] = [
   { id: "veefin", label: "Veefin", kind: "experience", summary: "Software Engineer, July 2026 – Present. A separate internship ran April 2026 – May 2026.", href: "/experience" },
   { id: "simppl", label: "SimPPL", kind: "experience", summary: "AI/ML Fellow, February 2024 – April 2025. SocialPulse is the public assignment from that work.", href: "/experience" },
   { id: "iitp", label: "IIT Patna", kind: "experience", summary: "Machine Learning Intern, March 2025 – June 2025. Classification models with a reported 96–98% accuracy, plus the seating allocator.", href: "/experience" },
+  {
+    id: "graphmind-research",
+    label: "GRAPHMIND – Semantic Knowledge Graph Research",
+    kind: "research",
+    summary:
+      "Unpublished academic research on an AI-driven Semantic Knowledge Graph and GraphRAG framework. Not IEEE/journal/conference published.",
+    href: "/research",
+  },
+  { id: "graphrag", label: "GraphRAG", kind: "concept", summary: "Hybrid graph-and-vector retrieval from the GRAPHMIND research paper." },
+  { id: "knowledge-graphs", label: "Knowledge Graphs", kind: "concept", summary: "Semantic knowledge-graph construction described in GRAPHMIND." },
+  { id: "rdf-owl", label: "RDF/OWL", kind: "concept", summary: "Semantic Web standards used in the GRAPHMIND research paper." },
+  { id: "faiss", label: "FAISS", kind: "technology", summary: "Vector index used with Sentence Transformers in GRAPHMIND hybrid retrieval." },
+  { id: "semantic-search", label: "Semantic Search", kind: "concept", summary: "Hybrid semantic retrieval in the GRAPHMIND research paper." },
+  {
+    id: "graphmind-research-pdf",
+    label: "GRAPHMIND Research PDF",
+    kind: "concept",
+    summary: "Original GRAPHMIND research PDF. Unpublished academic research.",
+    href: "/research/graphmind-research-paper.pdf",
+  },
+  {
+    id: "sdxl-research",
+    label: "Stable Diffusion XL – High-Resolution Image Synthesis",
+    kind: "research",
+    summary:
+      "Unpublished computer-vision research comparing Stable Diffusion XL with StyleGAN2 and BigGAN. Not IEEE/journal/conference published.",
+    href: "/research#research-stable-diffusion-sdxl",
+  },
+  {
+    id: "sdxl-research-pdf",
+    label: "Stable Diffusion Research PDF",
+    kind: "concept",
+    summary: "Original Stable Diffusion / latent diffusion research PDF. Unpublished academic research.",
+    href: "/research/stable-diffusion-latent-diffusion-high-resolution-image-synthesis.pdf",
+  },
+  { id: "computer-vision", label: "Computer Vision", kind: "concept", summary: "Vision and generative image-synthesis research domain." },
+  { id: "diffusion-models", label: "Diffusion Models", kind: "concept", summary: "Latent diffusion generative modeling evaluated in the SDXL research paper." },
 ];
 
 export const graphLinks: GraphLink[] = [
@@ -56,6 +93,10 @@ export const graphLinks: GraphLink[] = [
   { source: "fastapi", target: "physioplay" },
   { source: "python", target: "physioplay" },
   { source: "ml", target: "physioplay" },
+  { source: "rag", target: "physioplay" },
+  { source: "llm", target: "physioplay" },
+  { source: "nlp", target: "physioplay" },
+  { source: "physioplay", target: "simppl" },
   { source: "python", target: "graphmind" },
   { source: "fastapi", target: "graphmind" },
   { source: "rag", target: "graphmind" },
@@ -81,6 +122,19 @@ export const graphLinks: GraphLink[] = [
   { source: "aws", target: "veefin" },
   { source: "python", target: "fintech-analytics" },
   { source: "sql", target: "fintech-analytics" },
+  { source: "graphmind-research", target: "nlp" },
+  { source: "graphmind-research", target: "graphrag" },
+  { source: "graphmind-research", target: "knowledge-graphs" },
+  { source: "graphmind-research", target: "rdf-owl" },
+  { source: "graphmind-research", target: "neo4j" },
+  { source: "graphmind-research", target: "faiss" },
+  { source: "graphmind-research", target: "semantic-search" },
+  { source: "graphmind-research", target: "graphmind-research-pdf" },
+  { source: "graphmind-research", target: "graphmind" },
+  { source: "sdxl-research", target: "computer-vision" },
+  { source: "sdxl-research", target: "diffusion-models" },
+  { source: "sdxl-research", target: "ml" },
+  { source: "sdxl-research", target: "sdxl-research-pdf" },
 ];
 
 const groups: Record<Exclude<GraphFilter, "All">, GraphKind[]> = {
@@ -88,12 +142,14 @@ const groups: Record<Exclude<GraphFilter, "All">, GraphKind[]> = {
   Projects: ["project"],
   Experience: ["experience"],
   Tools: ["tool"],
+  Research: ["research"],
 };
 
 export function nodeGroup(kind: GraphKind): Exclude<GraphFilter, "All"> {
   if (kind === "project") return "Projects";
   if (kind === "experience") return "Experience";
   if (kind === "tool") return "Tools";
+  if (kind === "research") return "Research";
   return "Technologies";
 }
 

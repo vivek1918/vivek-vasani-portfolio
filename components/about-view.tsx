@@ -98,14 +98,17 @@ export function AboutView() {
             {profile.education.degree} at {profile.education.school}, {profile.education.period}. CGPA {profile.education.cgpa}. At IIT Patna the resume records 96–98% accuracy on the classification algorithms DRCNN, DGAN, and EMA-IDS. PhysioPlay is described there as a Mozilla-sponsored pilot with 10 users.
           </p>
           <p className="text-lg leading-relaxed text-[var(--muted)]">
-            I am not adding awards, client names, or rankings that are not on the resume or in a public repository. The certifications below are the two linked from the resume.
+            I am not adding awards, client names, or rankings that are not on the resume or in a public repository. The certifications below are the documents imported from the shared certificates folder.
           </p>
         </div>
       </section>
 
       <section className="mt-16">
         <h2 className="text-3xl tracking-[-0.04em]">Certifications</h2>
-        <div className="mt-6 grid gap-6 md:grid-cols-2">
+        <p className="mt-3 max-w-2xl text-[var(--muted)]">
+          {certificates.length} certificates with viewable originals. Dates and credential IDs appear only when printed on the document.
+        </p>
+        <div className="cert-grid mt-6">
           {certificates.map((certificate) => (
             <CertificateCard key={certificate.id} certificate={certificate} />
           ))}

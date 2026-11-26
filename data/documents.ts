@@ -57,6 +57,17 @@ export const experienceDocuments: ExperienceDocument[] = [
       "Signed by Yatharth Chauhan, Founder. It recommends Vivek Chetan Vasani for the WEBXELA internship from 3 June 2024 to 3 September 2024.",
     href: "/documents/webxela-letter-of-recommendation.pdf",
   },
+  {
+    id: "ecell-campus-ambassador-certificate",
+    experienceId: "ecell",
+    org: "E-Cell, IIT Bombay",
+    title: "Completion Certificate",
+    kind: "Certificate",
+    issued: "Date not printed on the certificate",
+    summary:
+      "Certificate of Completion for successfully completing the E-Cell IIT Bombay Campus Ambassador Internship Program 2024. Physics Wallah presents. Signed by Rashmi Khetan and Amey Patil, Overall Coordinators, E-Cell, IIT Bombay.",
+    href: "/certificates/e-cell-iit-bombay-campus-ambassador.pdf",
+  },
 ];
 
 export function documentsFor(experienceId: string) {
