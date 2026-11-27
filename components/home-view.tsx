@@ -196,7 +196,7 @@ function ResearchPreview() {
     <section className="site mt-16 border-t border-[var(--line)] pt-10 md:mt-28" id="research">
       <SectionLabel index="05" text="Research" />
       <div className="mt-4 flex flex-col justify-between gap-4 md:flex-row md:items-end">
-        <h2 className="max-w-2xl text-4xl tracking-[-0.04em] md:text-6xl">Unpublished academic research.</h2>
+        <h2 className="max-w-2xl text-4xl tracking-[-0.04em] md:text-6xl">Academic research.</h2>
         <Link className="btn-ghost" href="/research">
           Open research
         </Link>
@@ -205,10 +205,7 @@ function ResearchPreview() {
         {researchPapers.map((paper) => (
           <li key={paper.id}>
             <article className="research-card">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="research-status">{paper.statusLabel}</span>
-                <span className="kicker">{paper.category}</span>
-              </div>
+              <span className="kicker">{paper.category}</span>
               <h3 className="mt-4 text-[clamp(1.45rem,3.5vw,2.1rem)] tracking-[-0.04em]">{paper.title}</h3>
               <p className="mt-4 max-w-3xl text-lg leading-relaxed text-[var(--muted)]">{paper.summary}</p>
               <p className="mt-4 text-sm text-[var(--muted)]">{paper.authors.join(" · ")}</p>

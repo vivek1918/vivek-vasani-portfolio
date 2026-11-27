@@ -8,11 +8,10 @@ export function ResearchView() {
     <div className="site pb-8 pt-12">
       <p className="kicker">Research &amp; Publications</p>
       <h1 className="mt-4 max-w-3xl text-[clamp(2.15rem,8vw,4.5rem)] tracking-[-0.045em]">
-        Academic research, labeled clearly.
+        Academic research.
       </h1>
       <p className="mt-6 max-w-2xl text-lg leading-relaxed text-[var(--muted)]">
-        Work written as academic research. Entries here are unpublished unless a formal venue is stated.
-        This page is not a product showcase.
+        Papers and studies written as academic research. This page is not a product showcase.
       </p>
 
       <ul className="research-list">
@@ -29,10 +28,7 @@ export function ResearchView() {
 function ResearchCard({ paper }: { paper: ResearchPaper }) {
   return (
     <article className="research-card" id={`research-${paper.id}`} aria-labelledby={`research-title-${paper.id}`}>
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="research-status">{paper.statusLabel}</span>
-        <span className="kicker">{paper.category}</span>
-      </div>
+      <span className="kicker">{paper.category}</span>
 
       <h2 id={`research-title-${paper.id}`} className="mt-4 text-[clamp(1.55rem,4vw,2.35rem)] tracking-[-0.04em]">
         {paper.title}
@@ -55,10 +51,6 @@ function ResearchCard({ paper }: { paper: ResearchPaper }) {
             <dd>{paper.guide}</dd>
           </div>
         ) : null}
-        <div>
-          <dt>Publication status</dt>
-          <dd>{paper.status}. Not IEEE-published, journal-published, conference-published, or peer-reviewed.</dd>
-        </div>
       </dl>
 
       <div className="mt-8">
